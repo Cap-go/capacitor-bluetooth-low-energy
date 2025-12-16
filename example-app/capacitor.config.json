@@ -1,0 +1,8 @@
+{
+  "appId": "ee.forgr.plugin.bluetoothlowenergy.example",
+  "appName": "BLE Example",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
