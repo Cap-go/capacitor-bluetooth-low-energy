@@ -1,6 +1,30 @@
 # @capgo/capacitor-bluetooth-low-energy
+  <a href="https://capgo.app/"><img src='https://raw.githubusercontent.com/Cap-go/capgo/main/assets/capgo_banner.png' alt='Capgo - Instant updates for capacitor'/></a>
+
+<div align="center">
+  <h2><a href="https://capgo.app/?ref=plugin_bluetooth_low_energy"> ➡️ Get Instant updates for your App with Capgo</a></h2>
+  <h2><a href="https://capgo.app/consulting/?ref=plugin_bluetooth_low_energy"> Missing a feature? We'll build the plugin for you 💪</a></h2>
+</div>
 
 Bluetooth Low Energy (BLE) plugin for Capacitor with support for scanning, connecting, reading, writing, and notifications.
+
+## Why Capacitor Bluetooth Low Energy?
+
+A comprehensive, **free**, and **powerful** BLE plugin:
+
+- **Full BLE support** - Scan, connect, read, write, and receive notifications
+- **Peripheral mode** - Act as a BLE server and advertise services (Android/iOS)
+- **Service discovery** - Automatically discover services, characteristics, and descriptors
+- **Background support** - Foreground service for Android, background modes for iOS
+- **Permission handling** - Built-in permission management for Android 12+ and iOS
+- **Modern package management** - Supports both Swift Package Manager (SPM) and CocoaPods
+- **Cross-platform** - Works on iOS, Android, and Web (Chrome Web Bluetooth API)
+
+Perfect for IoT applications, wearables, health devices, smart home, and any BLE-connected peripherals.
+
+## Documentation
+
+The most complete doc is available here: https://capgo.app/docs/plugins/bluetooth-low-energy/
 
 ## Install
 
@@ -9,7 +33,7 @@ npm install @capgo/capacitor-bluetooth-low-energy
 npx cap sync
 ```
 
-## iOS Setup
+## iOS
 
 Add the following to your `Info.plist`:
 
@@ -30,13 +54,17 @@ For background BLE support, add the following to your `Info.plist`:
 </array>
 ```
 
-## Android Setup
+## Android
 
-The plugin automatically adds the required permissions to your `AndroidManifest.xml`. However, you may need to request runtime permissions before using BLE features:
+Works out of the box. The plugin automatically adds the required permissions to your `AndroidManifest.xml`. For Android 12+, you may need to request runtime permissions before using BLE features:
 
 ```typescript
 await BluetoothLowEnergy.requestPermissions();
 ```
+
+## Web
+
+Works in Chrome and Chromium-based browsers using the Web Bluetooth API. Note that Web Bluetooth requires HTTPS and user interaction to scan for devices.
 
 ## API
 
@@ -1124,89 +1152,3 @@ Event emitted when a characteristic value changes.
 <code>'prompt' | 'prompt-with-rationale' | 'granted' | 'denied'</code>
 
 </docgen-api>
-
-## Usage Example
-
-```typescript
-import { BluetoothLowEnergy, BluetoothLowEnergyUtils } from '@capgo/capacitor-bluetooth-low-energy';
-
-// Initialize the plugin
-await BluetoothLowEnergy.initialize({ mode: 'central' });
-
-// Check and request permissions
-const permissions = await BluetoothLowEnergy.checkPermissions();
-if (permissions.bluetooth !== 'granted') {
-  await BluetoothLowEnergy.requestPermissions();
-}
-
-// Add listener for discovered devices
-await BluetoothLowEnergy.addListener('deviceScanned', (event) => {
-  console.log('Found device:', event.device.name, event.device.deviceId);
-});
-
-// Start scanning for devices
-await BluetoothLowEnergy.startScan({
-  services: ['180D'], // Heart Rate Service
-  timeout: 10000, // 10 seconds
-});
-
-// Connect to a device
-await BluetoothLowEnergy.connect({ deviceId: 'AA:BB:CC:DD:EE:FF' });
-
-// Listen for connection events
-await BluetoothLowEnergy.addListener('deviceConnected', (event) => {
-  console.log('Connected to:', event.deviceId);
-});
-
-// Discover services
-await BluetoothLowEnergy.discoverServices({ deviceId: 'AA:BB:CC:DD:EE:FF' });
-
-// Get discovered services
-const { services } = await BluetoothLowEnergy.getServices({ deviceId: 'AA:BB:CC:DD:EE:FF' });
-console.log('Services:', services);
-
-// Read a characteristic
-const { value } = await BluetoothLowEnergy.readCharacteristic({
-  deviceId: 'AA:BB:CC:DD:EE:FF',
-  service: '180D',
-  characteristic: '2A37',
-});
-console.log('Heart Rate:', value);
-
-// Write to a characteristic
-await BluetoothLowEnergy.writeCharacteristic({
-  deviceId: 'AA:BB:CC:DD:EE:FF',
-  service: '180D',
-  characteristic: '2A39',
-  value: [0x01],
-  type: 'withResponse',
-});
-
-// Start notifications
-await BluetoothLowEnergy.addListener('characteristicChanged', (event) => {
-  console.log('Characteristic changed:', event.characteristic, event.value);
-});
-
-await BluetoothLowEnergy.startCharacteristicNotifications({
-  deviceId: 'AA:BB:CC:DD:EE:FF',
-  service: '180D',
-  characteristic: '2A37',
-});
-
-// Using utility functions
-const hexString = BluetoothLowEnergyUtils.convertBytesToHex([0x48, 0x65, 0x6c, 0x6c, 0x6f]);
-console.log(hexString); // "48656c6c6f"
-
-const bytes = BluetoothLowEnergyUtils.convertHexToBytes('48656c6c6f');
-console.log(bytes); // [72, 101, 108, 108, 111]
-
-// Disconnect
-await BluetoothLowEnergy.disconnect({ deviceId: 'AA:BB:CC:DD:EE:FF' });
-
-// Remove all listeners
-await BluetoothLowEnergy.removeAllListeners();
-```
-
-## License
-
-MPL-2.0

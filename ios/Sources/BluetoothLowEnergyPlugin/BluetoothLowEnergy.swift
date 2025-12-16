@@ -1,6 +1,7 @@
 import Foundation
 import CoreBluetooth
 
+// swiftlint:disable type_body_length file_length function_parameter_count for_where
 public class BluetoothLowEnergy: NSObject {
     fileprivate weak var plugin: BluetoothLowEnergyPlugin?
     private var centralManager: CBCentralManager?

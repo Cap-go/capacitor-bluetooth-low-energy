@@ -104,7 +104,7 @@ interface Bluetooth {
 }
 
 interface RequestDeviceOptions {
-  filters?: Array<{ services?: string[]; name?: string; namePrefix?: string }>;
+  filters?: { services?: string[]; name?: string; namePrefix?: string }[];
   optionalServices?: string[];
   acceptAllDevices?: boolean;
 }
@@ -118,11 +118,10 @@ declare global {
 export class BluetoothLowEnergyWeb extends WebPlugin implements BluetoothLowEnergyPlugin {
   private devices: Map<string, BluetoothDevice> = new Map();
   private services: Map<string, BleService[]> = new Map();
-  private characteristicListeners: Map<
-    string,
-    (event: Event & { target: BluetoothRemoteGATTCharacteristic }) => void
-  > = new Map();
+  private characteristicListeners: Map<string, (event: Event & { target: BluetoothRemoteGATTCharacteristic }) => void> =
+    new Map();
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async initialize(_options?: InitializeOptions): Promise<void> {
     if (!navigator.bluetooth) {
       throw new Error('Web Bluetooth API is not available');
@@ -249,10 +248,12 @@ export class BluetoothLowEnergyWeb extends WebPlugin implements BluetoothLowEner
     this.notifyListeners('deviceDisconnected', { deviceId: options.deviceId });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async createBond(_options: CreateBondOptions): Promise<void> {
     throw new Error('createBond is not supported on web');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async isBonded(_options: IsBondedOptions): Promise<IsBondedResult> {
     throw new Error('isBonded is not supported on web');
   }
@@ -353,9 +354,7 @@ export class BluetoothLowEnergyWeb extends WebPlugin implements BluetoothLowEner
     }
   }
 
-  async startCharacteristicNotifications(
-    options: StartCharacteristicNotificationsOptions,
-  ): Promise<void> {
+  async startCharacteristicNotifications(options: StartCharacteristicNotificationsOptions): Promise<void> {
     const device = this.devices.get(options.deviceId);
     if (!device?.gatt?.connected) {
       throw new Error(`Device ${options.deviceId} is not connected`);
@@ -389,9 +388,7 @@ export class BluetoothLowEnergyWeb extends WebPlugin implements BluetoothLowEner
     await characteristic.startNotifications();
   }
 
-  async stopCharacteristicNotifications(
-    options: StopCharacteristicNotificationsOptions,
-  ): Promise<void> {
+  async stopCharacteristicNotifications(options: StopCharacteristicNotificationsOptions): Promise<void> {
     const device = this.devices.get(options.deviceId);
     if (!device?.gatt?.connected) {
       throw new Error(`Device ${options.deviceId} is not connected`);
@@ -454,18 +451,22 @@ export class BluetoothLowEnergyWeb extends WebPlugin implements BluetoothLowEner
     await descriptor.writeValue(data);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async readRssi(_options: ReadRssiOptions): Promise<ReadRssiResult> {
     throw new Error('readRssi is not supported on web');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async requestMtu(_options: RequestMtuOptions): Promise<RequestMtuResult> {
     throw new Error('requestMtu is not supported on web');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async requestConnectionPriority(_options: RequestConnectionPriorityOptions): Promise<void> {
     throw new Error('requestConnectionPriority is not supported on web');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async startAdvertising(_options: StartAdvertisingOptions): Promise<void> {
     throw new Error('startAdvertising is not supported on web');
   }
@@ -474,6 +475,7 @@ export class BluetoothLowEnergyWeb extends WebPlugin implements BluetoothLowEner
     throw new Error('stopAdvertising is not supported on web');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async startForegroundService(_options: StartForegroundServiceOptions): Promise<void> {
     throw new Error('startForegroundService is not supported on web');
   }
