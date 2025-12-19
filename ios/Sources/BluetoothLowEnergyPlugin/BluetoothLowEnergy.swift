@@ -61,21 +61,17 @@ public class BluetoothLowEnergy: NSObject {
     }
 
     func getPermissionStatus() -> String {
-        if #available(iOS 13.1, *) {
-            switch CBCentralManager.authorization {
-            case .allowedAlways:
-                return "granted"
-            case .denied:
-                return "denied"
-            case .restricted:
-                return "denied"
-            case .notDetermined:
-                return "prompt"
-            @unknown default:
-                return "prompt"
-            }
-        } else {
+        switch CBCentralManager.authorization {
+        case .allowedAlways:
             return "granted"
+        case .denied:
+            return "denied"
+        case .restricted:
+            return "denied"
+        case .notDetermined:
+            return "prompt"
+        @unknown default:
+            return "prompt"
         }
     }
 
