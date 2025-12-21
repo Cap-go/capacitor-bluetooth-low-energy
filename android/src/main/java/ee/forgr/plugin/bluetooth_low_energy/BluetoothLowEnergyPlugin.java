@@ -252,7 +252,7 @@ public class BluetoothLowEnergyPlugin extends Plugin {
         ScanSettings.Builder settingsBuilder = new ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
 
-        if (!allowDuplicates && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (!allowDuplicates) {
             settingsBuilder.setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH);
         }
 
