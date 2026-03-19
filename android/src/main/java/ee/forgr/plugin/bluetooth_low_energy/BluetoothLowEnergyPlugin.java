@@ -19,6 +19,7 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.bluetooth.le.ScanRecord;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -30,6 +31,7 @@ import android.os.ParcelUuid;
 import android.provider.Settings;
 import androidx.annotation.RequiresPermission;
 import androidx.core.app.ActivityCompat;
+import android.util.SparseArray;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -309,13 +311,14 @@ public class BluetoothLowEnergyPlugin extends Plugin {
         }
         deviceObj.put("rssi", result.getRssi());
 
-        if (result.getScanRecord() != null) {
-            byte[] manufacturerData = result.getScanRecord().getManufacturerSpecificData(0);
-            if (manufacturerData != null) {
-                deviceObj.put("manufacturerData", bytesToHex(manufacturerData));
+        ScanRecord scanRecord = result.getScanRecord();
+        if (scanRecord != null) {
+            String manufacturerData = manufacturerDataToHex(scanRecord.getManufacturerSpecificData());
+            if (!manufacturerData.isEmpty()) {
+                deviceObj.put("manufacturerData", manufacturerData);
             }
 
-            List<ParcelUuid> serviceUuids = result.getScanRecord().getServiceUuids();
+            List<ParcelUuid> serviceUuids = scanRecord.getServiceUuids();
             if (serviceUuids != null) {
                 JSArray uuids = new JSArray();
                 for (ParcelUuid uuid : serviceUuids) {
@@ -1126,6 +1129,28 @@ public class BluetoothLowEnergyPlugin extends Plugin {
         for (byte b : bytes) {
             sb.append(String.format("%02x", b));
         }
+        return sb.toString();
+    }
+
+    private String manufacturerDataToHex(SparseArray<byte[]> manufacturerDataMap) {
+        if (manufacturerDataMap == null || manufacturerDataMap.size() == 0) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < manufacturerDataMap.size(); i++) {
+            int companyId = manufacturerDataMap.keyAt(i);
+            byte[] data = manufacturerDataMap.valueAt(i);
+            byte[] companyIdBytes = new byte[] {
+                (byte) (companyId & 0xFF),
+                (byte) ((companyId >> 8) & 0xFF)
+            };
+            sb.append(bytesToHex(companyIdBytes));
+            if (data != null && data.length > 0) {
+                sb.append(bytesToHex(data));
+            }
+        }
+
         return sb.toString();
     }
 
