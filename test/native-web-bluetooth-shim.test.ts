@@ -246,3 +246,70 @@ test('registers notification listeners for connected devices returned by getDevi
 
   expect(notificationValues).toEqual([[1, 2, 3]]);
 });
+
+test('requires all services in a filter and supports named service aliases', async () => {
+  const root = { navigator: {} } as unknown as typeof globalThis;
+  const listeners = new Map<string, (event: unknown) => void>();
+  const heartRateService = '0000180d-0000-1000-8000-00805f9b34fb';
+  const batteryService = '0000180f-0000-1000-8000-00805f9b34fb';
+  let scanServices: string[] | undefined;
+
+  const plugin = {
+    addListener: async (eventName: string, listener: (event: unknown) => void) => {
+      listeners.set(eventName, listener);
+      return {
+        remove: async () => listeners.delete(eventName),
+      };
+    },
+    async initialize() {
+      return undefined;
+    },
+    async isAvailable() {
+      return { available: true };
+    },
+    async isEnabled() {
+      return { enabled: true };
+    },
+    async requestPermissions() {
+      return { bluetooth: 'granted', location: 'granted' };
+    },
+    async isLocationEnabled() {
+      return { enabled: true };
+    },
+    async stopScan() {
+      return undefined;
+    },
+    async startScan(options?: { services?: string[] }) {
+      scanServices = options?.services;
+      queueMicrotask(() => {
+        listeners.get('deviceScanned')?.({
+          device: {
+            deviceId: 'device-3',
+            name: 'Missing Battery',
+            serviceUuids: [heartRateService],
+          },
+        });
+        listeners.get('deviceScanned')?.({
+          device: {
+            deviceId: 'device-4',
+            name: 'Complete Match',
+            serviceUuids: [heartRateService, batteryService],
+          },
+        });
+      });
+    },
+  } as unknown as BluetoothLowEnergyPlugin;
+
+  installBluetoothLowEnergyShim(plugin, {
+    isNativePlatform: true,
+    isPluginAvailable: true,
+    root,
+  });
+
+  const device = await root.navigator.bluetooth?.requestDevice({
+    filters: [{ services: ['heart_rate', 0x180f] }],
+  });
+
+  expect(scanServices).toEqual([heartRateService, batteryService]);
+  expect(device?.id).toBe('device-4');
+});

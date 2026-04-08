@@ -15,6 +15,59 @@ import type {
 const PLUGIN_NAME = 'BluetoothLowEnergy';
 const DEFAULT_SCAN_TIMEOUT = 15_000;
 const BLUETOOTH_BASE_UUID_SUFFIX = '-0000-1000-8000-00805f9b34fb';
+const BLUETOOTH_SERVICE_UUID_ALIASES: Record<string, number> = {
+  alert_notification: 0x1811,
+  automation_io: 0x1815,
+  battery_service: 0x180f,
+  binary_sensor: 0x183b,
+  blood_pressure: 0x1810,
+  body_composition: 0x181b,
+  bond_management: 0x181e,
+  continuous_glucose_monitoring: 0x181f,
+  coordinated_set_identification_service: 0x1846,
+  current_time: 0x1805,
+  cycling_power: 0x1818,
+  cycling_speed_and_cadence: 0x1816,
+  device_information: 0x180a,
+  device_time: 0x1847,
+  emergency_configuration: 0x183c,
+  environmental_sensing: 0x181a,
+  fitness_machine: 0x1826,
+  generic_access: 0x1800,
+  generic_attribute: 0x1801,
+  generic_media_control_service: 0x1849,
+  generic_telephone_bearer_service: 0x184c,
+  glucose: 0x1808,
+  health_thermometer: 0x1809,
+  heart_rate: 0x180d,
+  http_proxy: 0x1823,
+  human_interface_device: 0x1812,
+  immediate_alert: 0x1802,
+  indoor_positioning: 0x1821,
+  insulin_delivery: 0x183a,
+  internet_protocol_support: 0x1820,
+  link_loss: 0x1803,
+  location_and_navigation: 0x1819,
+  media_control_service: 0x1848,
+  mesh_provisioning: 0x1827,
+  mesh_proxy: 0x1828,
+  microphone_control: 0x184d,
+  next_dst_change: 0x1807,
+  object_transfer: 0x1825,
+  phone_alert_status: 0x180e,
+  physical_activity_monitor: 0x183e,
+  pulse_oximeter: 0x1822,
+  reconnection_configuration: 0x1829,
+  reference_time_update: 0x1806,
+  running_speed_and_cadence: 0x1814,
+  scan_parameters: 0x1813,
+  transport_discovery: 0x1824,
+  tx_power: 0x1804,
+  user_data: 0x181c,
+  volume_control: 0x1844,
+  volume_offset_control: 0x1845,
+  weight_scale: 0x181d,
+};
 type BluetoothUuid = string | number;
 type BluetoothServiceUUID = BluetoothUuid;
 type BluetoothCharacteristicUUID = BluetoothUuid;
@@ -848,7 +901,7 @@ function matchesRequestOptions(device: BleDevice | BluetoothDeviceShim, options:
       return true;
     }
 
-    return filter.services.some((service) => advertisedServices.has(normalizeUuid(service)));
+    return filter.services.every((service) => advertisedServices.has(normalizeUuid(service)));
   });
 }
 
@@ -866,6 +919,10 @@ function canonicalUUID(value: BluetoothServiceUUID | BluetoothCharacteristicUUID
   }
 
   const trimmed = String(value).trim().toLowerCase();
+
+  if (trimmed in BLUETOOTH_SERVICE_UUID_ALIASES) {
+    return `${BLUETOOTH_SERVICE_UUID_ALIASES[trimmed].toString(16).padStart(8, '0')}${BLUETOOTH_BASE_UUID_SUFFIX}`;
+  }
 
   if (/^0x[0-9a-f]+$/iu.test(trimmed)) {
     return `${trimmed.slice(2).padStart(8, '0')}${BLUETOOTH_BASE_UUID_SUFFIX}`;
