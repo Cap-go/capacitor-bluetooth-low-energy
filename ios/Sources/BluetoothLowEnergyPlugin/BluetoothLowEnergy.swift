@@ -422,6 +422,13 @@ extension BluetoothLowEnergy: CBCentralManagerDelegate {
 
         if let manufacturerData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data {
             device["manufacturerData"] = manufacturerData.map { String(format: "%02x", $0) }.joined()
+        } else if let manufacturerDict = advertisementData[CBAdvertisementDataManufacturerDataKey] as? [NSNumber: Data],
+                  let entry = manufacturerDict.first {
+            var data = Data()
+            var companyId = entry.key.uint16Value.littleEndian
+            withUnsafeBytes(of: &companyId) { data.append(contentsOf: $0) }
+            data.append(entry.value)
+            device["manufacturerData"] = data.map { String(format: "%02x", $0) }.joined()
         }
 
         if let serviceUUIDs = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {

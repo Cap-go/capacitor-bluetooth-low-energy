@@ -28,6 +28,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.provider.Settings;
+import android.util.SparseArray;
 import androidx.annotation.RequiresPermission;
 import androidx.core.app.ActivityCompat;
 import com.getcapacitor.JSArray;
@@ -38,6 +39,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -310,9 +312,22 @@ public class BluetoothLowEnergyPlugin extends Plugin {
         deviceObj.put("rssi", result.getRssi());
 
         if (result.getScanRecord() != null) {
-            byte[] manufacturerData = result.getScanRecord().getManufacturerSpecificData(0);
-            if (manufacturerData != null) {
-                deviceObj.put("manufacturerData", bytesToHex(manufacturerData));
+            SparseArray<byte[]> manufacturerDataArray = result.getScanRecord().getManufacturerSpecificData();
+            if (manufacturerDataArray != null && manufacturerDataArray.size() > 0) {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                for (int i = 0; i < manufacturerDataArray.size(); i++) {
+                    int companyId = manufacturerDataArray.keyAt(i);
+                    byte[] data = manufacturerDataArray.valueAt(i);
+
+                    // Append company ID in little-endian order followed by payload to match iOS format.
+                    output.write(companyId & 0xFF);
+                    output.write((companyId >> 8) & 0xFF);
+                    if (data != null) {
+                        output.write(data, 0, data.length);
+                    }
+                }
+
+                deviceObj.put("manufacturerData", bytesToHex(output.toByteArray()));
             }
 
             List<ParcelUuid> serviceUuids = result.getScanRecord().getServiceUuids();
