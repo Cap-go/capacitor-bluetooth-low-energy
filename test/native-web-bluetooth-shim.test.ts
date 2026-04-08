@@ -313,3 +313,98 @@ test('requires all services in a filter and supports named service aliases', asy
   expect(scanServices).toEqual([heartRateService, batteryService]);
   expect(device?.id).toBe('device-4');
 });
+
+test('registers disconnect listeners before exposing connected devices', async () => {
+  const root = { navigator: {} } as unknown as typeof globalThis;
+  const listeners = new Map<string, (event: unknown) => void>();
+  const heartRateService = '0000180d-0000-1000-8000-00805f9b34fb';
+  const disconnectEvents: string[] = [];
+
+  const plugin = {
+    addListener: async (eventName: string, listener: (event: unknown) => void) => {
+      listeners.set(eventName, listener);
+      return {
+        remove: async () => listeners.delete(eventName),
+      };
+    },
+    async initialize() {
+      return undefined;
+    },
+    async getConnectedDevices() {
+      return {
+        devices: [
+          {
+            deviceId: 'device-5',
+            name: 'Reconnectable Sensor',
+            serviceUuids: [heartRateService],
+          },
+        ],
+      };
+    },
+  } as unknown as BluetoothLowEnergyPlugin;
+
+  installBluetoothLowEnergyShim(plugin, {
+    isNativePlatform: true,
+    isPluginAvailable: true,
+    root,
+  });
+
+  const devices = await root.navigator.bluetooth?.getDevices();
+  const device = devices?.[0];
+  device?.addEventListener('gattserverdisconnected', (event) => {
+    disconnectEvents.push(event.target.id);
+  });
+
+  listeners.get('deviceDisconnected')?.({
+    deviceId: 'device-5',
+  });
+
+  expect(disconnectEvents).toEqual(['device-5']);
+});
+
+test('does not match empty requestDevice filters', async () => {
+  const root = { navigator: {} } as unknown as typeof globalThis;
+
+  const plugin = {
+    async addListener() {
+      return {
+        remove: async () => undefined,
+      };
+    },
+    async initialize() {
+      return undefined;
+    },
+    async isAvailable() {
+      return { available: true };
+    },
+    async isEnabled() {
+      return { enabled: true };
+    },
+    async requestPermissions() {
+      return { bluetooth: 'granted', location: 'granted' };
+    },
+    async isLocationEnabled() {
+      return { enabled: true };
+    },
+    async stopScan() {
+      return undefined;
+    },
+    async startScan() {
+      throw new Error('startScan should not be reached for empty filters');
+    },
+  } as unknown as BluetoothLowEnergyPlugin;
+
+  installBluetoothLowEnergyShim(plugin, {
+    isNativePlatform: true,
+    isPluginAvailable: true,
+    root,
+  });
+
+  await expect(
+    root.navigator.bluetooth?.requestDevice({
+      filters: [{}],
+    }),
+  ).rejects.toMatchObject({
+    name: 'TypeError',
+  });
+});

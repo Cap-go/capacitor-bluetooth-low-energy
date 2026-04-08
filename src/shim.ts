@@ -207,6 +207,7 @@ class NativeWebBluetoothShim {
 
   async getDevices(): Promise<BluetoothDeviceShim[]> {
     await this.ensureInitialized();
+    await this.ensureListeners();
     const { devices } = await this.plugin.getConnectedDevices();
 
     devices.forEach((deviceData) => {
@@ -223,6 +224,18 @@ class NativeWebBluetoothShim {
   async requestDevice(options: RequestDeviceOptions): Promise<BluetoothDeviceShim> {
     if (!options || (options.acceptAllDevices !== true && (!options.filters || options.filters.length === 0))) {
       throw new TypeError('requestDevice requires filters or acceptAllDevices: true.');
+    }
+
+    if (
+      options.acceptAllDevices !== true &&
+      options.filters?.some(
+        (filter) =>
+          (!filter.services || filter.services.length === 0) &&
+          typeof filter.name !== 'string' &&
+          typeof filter.namePrefix !== 'string',
+      )
+    ) {
+      throw new TypeError('requestDevice filters must specify a name, namePrefix, or at least one service.');
     }
 
     if (this.pendingRequest) {
@@ -887,6 +900,14 @@ function matchesRequestOptions(device: BleDevice | BluetoothDeviceShim, options:
   const advertisedServices = new Set((device.serviceUuids ?? []).map((serviceUuid) => normalizeUuid(serviceUuid)));
 
   return options.filters.some((filter) => {
+    const hasServiceConstraint = Boolean(filter.services && filter.services.length > 0);
+    const hasNameConstraint = typeof filter.name === 'string';
+    const hasNamePrefixConstraint = typeof filter.namePrefix === 'string';
+
+    if (!hasServiceConstraint && !hasNameConstraint && !hasNamePrefixConstraint) {
+      return false;
+    }
+
     if (filter.name && device.name !== filter.name) {
       return false;
     }
@@ -897,11 +918,12 @@ function matchesRequestOptions(device: BleDevice | BluetoothDeviceShim, options:
       }
     }
 
-    if (!filter.services || filter.services.length === 0) {
+    if (!hasServiceConstraint) {
       return true;
     }
 
-    return filter.services.every((service) => advertisedServices.has(normalizeUuid(service)));
+    const services = filter.services ?? [];
+    return services.every((service) => advertisedServices.has(normalizeUuid(service)));
   });
 }
 
