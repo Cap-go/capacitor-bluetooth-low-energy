@@ -22,6 +22,18 @@ export interface BluetoothLowEnergyPlugin {
   initialize(options?: InitializeOptions): Promise<void>;
 
   /**
+   * Install the Capacitor Web Bluetooth shim on `navigator.bluetooth`.
+   * Call this manually before using the Web Bluetooth API from a Capacitor native app.
+   *
+   * @since 1.0.0
+   * @example
+   * ```typescript
+   * BluetoothLowEnergy.shimWebBluetooth();
+   * ```
+   */
+  shimWebBluetooth(): void;
+
+  /**
    * Check if Bluetooth is available on the device.
    *
    * @returns Promise that resolves with availability status
