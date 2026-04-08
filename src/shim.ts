@@ -308,14 +308,14 @@ class NativeWebBluetoothShim {
         return normalizeUuid(descriptorData.uuid) === normalizedDescriptorUuid;
       })
       .map((descriptorData) => {
-      const descriptor = new BluetoothRemoteGATTDescriptorShim(
-        this,
-        device,
-        normalizeUuid(serviceUuid),
-        normalizeUuid(characteristicUuid),
-        descriptorData,
-      );
-      return descriptor;
+        const descriptor = new BluetoothRemoteGATTDescriptorShim(
+          this,
+          device,
+          normalizeUuid(serviceUuid),
+          normalizeUuid(characteristicUuid),
+          descriptorData,
+        );
+        return descriptor;
       });
   }
 
@@ -325,9 +325,7 @@ class NativeWebBluetoothShim {
     characteristicUuid: BluetoothCharacteristicUUID,
     descriptorUuid: BluetoothDescriptorUUID,
   ): Promise<BluetoothRemoteGATTDescriptorShim> {
-    const descriptor = (
-      await this.getDescriptors(device, serviceUuid, characteristicUuid, descriptorUuid)
-    )[0];
+    const descriptor = (await this.getDescriptors(device, serviceUuid, characteristicUuid, descriptorUuid))[0];
 
     if (!descriptor) {
       throw createBluetoothError('NotFoundError', 'Requested Bluetooth descriptor was not found.');
