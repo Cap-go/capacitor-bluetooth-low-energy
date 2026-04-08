@@ -110,6 +110,7 @@ class NativeWebBluetoothShim {
   private pendingRequest: PendingRequest | null = null;
   private readonly deviceCache = new Map<string, BluetoothDeviceShim>();
   private readonly characteristicCache = new Map<string, BluetoothRemoteGATTCharacteristicShim>();
+  private readonly exposedDeviceIds = new Set<string>();
   private readonly listenerHandles: PluginListenerHandle[] = [];
 
   constructor(
@@ -158,9 +159,12 @@ class NativeWebBluetoothShim {
     devices.forEach((deviceData) => {
       const device = this.getOrCreateDevice(deviceData);
       device.gatt.setConnected(true);
+      this.exposedDeviceIds.add(device.id);
     });
 
-    return Array.from(this.deviceCache.values());
+    return Array.from(this.exposedDeviceIds)
+      .map((deviceId) => this.deviceCache.get(deviceId))
+      .filter((device): device is BluetoothDeviceShim => typeof device !== 'undefined');
   }
 
   async requestDevice(options: RequestDeviceOptions): Promise<BluetoothDeviceShim> {
@@ -290,10 +294,20 @@ class NativeWebBluetoothShim {
     device: BluetoothDeviceShim,
     serviceUuid: BluetoothServiceUUID,
     characteristicUuid: BluetoothCharacteristicUUID,
+    descriptorUuid?: BluetoothDescriptorUUID,
   ): Promise<BluetoothRemoteGATTDescriptorShim[]> {
     const { characteristic } = await this.findCharacteristic(device, serviceUuid, characteristicUuid);
+    const normalizedDescriptorUuid = descriptorUuid ? normalizeUuid(descriptorUuid) : null;
 
-    return characteristic.descriptors.map((descriptorData) => {
+    return characteristic.descriptors
+      .filter((descriptorData) => {
+        if (!normalizedDescriptorUuid) {
+          return true;
+        }
+
+        return normalizeUuid(descriptorData.uuid) === normalizedDescriptorUuid;
+      })
+      .map((descriptorData) => {
       const descriptor = new BluetoothRemoteGATTDescriptorShim(
         this,
         device,
@@ -302,7 +316,24 @@ class NativeWebBluetoothShim {
         descriptorData,
       );
       return descriptor;
-    });
+      });
+  }
+
+  async getDescriptor(
+    device: BluetoothDeviceShim,
+    serviceUuid: BluetoothServiceUUID,
+    characteristicUuid: BluetoothCharacteristicUUID,
+    descriptorUuid: BluetoothDescriptorUUID,
+  ): Promise<BluetoothRemoteGATTDescriptorShim> {
+    const descriptor = (
+      await this.getDescriptors(device, serviceUuid, characteristicUuid, descriptorUuid)
+    )[0];
+
+    if (!descriptor) {
+      throw createBluetoothError('NotFoundError', 'Requested Bluetooth descriptor was not found.');
+    }
+
+    return descriptor;
   }
 
   async readCharacteristic(
@@ -417,15 +448,16 @@ class NativeWebBluetoothShim {
   }
 
   private handleDeviceScanned(event: DeviceScannedEvent): void {
-    if (!this.pendingRequest) {
+    if (!this.pendingRequest || !event.device) {
+      return;
+    }
+
+    if (!matchesRequestOptions(event.device, this.pendingRequest.options)) {
       return;
     }
 
     const device = this.getOrCreateDevice(event.device);
-    if (!matchesRequestOptions(device, this.pendingRequest.options)) {
-      return;
-    }
-
+    this.exposedDeviceIds.add(device.id);
     const request = this.pendingRequest;
     this.pendingRequest = null;
 
@@ -556,6 +588,7 @@ class BluetoothDeviceShim extends ShimEventEmitter<BluetoothDeviceShim> {
   public name: string | null;
   public rssi?: number;
   public manufacturerData?: string;
+  public serviceUuids?: string[];
   private services: BleService[] | null = null;
 
   constructor(shim: NativeWebBluetoothShim, deviceData: BleDevice) {
@@ -570,6 +603,7 @@ class BluetoothDeviceShim extends ShimEventEmitter<BluetoothDeviceShim> {
     this.name = deviceData.name;
     this.rssi = deviceData.rssi;
     this.manufacturerData = deviceData.manufacturerData;
+    this.serviceUuids = deviceData.serviceUuids;
   }
 
   getServices(): BleService[] | null {
@@ -669,14 +703,20 @@ class BluetoothRemoteGATTCharacteristicShim extends ShimEventEmitter<BluetoothRe
     this.characteristicData = characteristicData;
   }
 
-  async getDescriptors(): Promise<BluetoothRemoteGATTDescriptorShim[]> {
-    const descriptors = await this.shim.getDescriptors(this.device, this.serviceUuid, this.uuid);
+  async getDescriptors(descriptorUuid?: BluetoothDescriptorUUID): Promise<BluetoothRemoteGATTDescriptorShim[]> {
+    const descriptors = await this.shim.getDescriptors(this.device, this.serviceUuid, this.uuid, descriptorUuid);
 
     descriptors.forEach((descriptor) => {
       descriptor.characteristic = this;
     });
 
     return descriptors;
+  }
+
+  async getDescriptor(descriptorUuid: BluetoothDescriptorUUID): Promise<BluetoothRemoteGATTDescriptorShim> {
+    const descriptor = await this.shim.getDescriptor(this.device, this.serviceUuid, this.uuid, descriptorUuid);
+    descriptor.characteristic = this;
+    return descriptor;
   }
 
   async readValue(): Promise<DataView> {
@@ -757,21 +797,21 @@ class BluetoothShimFacade extends ShimEventEmitter<BluetoothShimFacade> {
 }
 
 function mergeRequestedServices(filters?: RequestDeviceOptions['filters']): string[] {
-  if (!filters) {
+  if (!filters || filters.some((filter) => !filter.services || filter.services.length === 0)) {
     return [];
   }
 
   const services = new Set<string>();
   filters.forEach((filter) => {
     filter.services?.forEach((service) => {
-      services.add(String(service));
+      services.add(normalizeUuid(service));
     });
   });
 
   return Array.from(services);
 }
 
-function matchesRequestOptions(device: BluetoothDeviceShim, options: RequestDeviceOptions): boolean {
+function matchesRequestOptions(device: BleDevice | BluetoothDeviceShim, options: RequestDeviceOptions): boolean {
   if (options.acceptAllDevices) {
     return true;
   }
@@ -779,6 +819,8 @@ function matchesRequestOptions(device: BluetoothDeviceShim, options: RequestDevi
   if (!options.filters || options.filters.length === 0) {
     return false;
   }
+
+  const advertisedServices = new Set((device.serviceUuids ?? []).map((serviceUuid) => normalizeUuid(serviceUuid)));
 
   return options.filters.some((filter) => {
     if (filter.name && device.name !== filter.name) {
@@ -791,8 +833,11 @@ function matchesRequestOptions(device: BluetoothDeviceShim, options: RequestDevi
       }
     }
 
-    // Service matching is delegated to the native scan filters.
-    return true;
+    if (!filter.services || filter.services.length === 0) {
+      return true;
+    }
+
+    return filter.services.some((service) => advertisedServices.has(normalizeUuid(service)));
   });
 }
 
@@ -806,17 +851,17 @@ function normalizeUuid(value: BluetoothServiceUUID | BluetoothCharacteristicUUID
 
 function canonicalUUID(value: BluetoothServiceUUID | BluetoothCharacteristicUUID | BluetoothDescriptorUUID): string {
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return `${value.toString(16).padStart(4, '0')}${BLUETOOTH_BASE_UUID_SUFFIX}`;
+    return `${value.toString(16).padStart(8, '0')}${BLUETOOTH_BASE_UUID_SUFFIX}`;
   }
 
   const trimmed = String(value).trim().toLowerCase();
 
   if (/^0x[0-9a-f]+$/iu.test(trimmed)) {
-    return `${trimmed.slice(2).padStart(4, '0')}${BLUETOOTH_BASE_UUID_SUFFIX}`;
+    return `${trimmed.slice(2).padStart(8, '0')}${BLUETOOTH_BASE_UUID_SUFFIX}`;
   }
 
   if (/^[0-9a-f]{4}$/iu.test(trimmed) || /^[0-9a-f]{8}$/iu.test(trimmed)) {
-    return `${trimmed}${BLUETOOTH_BASE_UUID_SUFFIX}`;
+    return `${trimmed.padStart(8, '0')}${BLUETOOTH_BASE_UUID_SUFFIX}`;
   }
 
   if (/^[0-9a-f]{32}$/iu.test(trimmed)) {
