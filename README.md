@@ -19,6 +19,7 @@ A comprehensive, **free**, and **powerful** BLE plugin:
 - **Permission handling** - Built-in permission management for Android 12+ and iOS
 - **Modern package management** - Supports both Swift Package Manager (SPM) and CocoaPods
 - **Cross-platform** - Works on iOS, Android, and Web (Chrome Web Bluetooth API)
+- **Capacitor Web Bluetooth shim** - Lets browser-style BLE code keep using `navigator.bluetooth` inside native Capacitor apps with one manual call
 
 Perfect for IoT applications, wearables, health devices, smart home, and any BLE-connected peripherals.
 

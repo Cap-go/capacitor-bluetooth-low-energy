@@ -221,6 +221,7 @@ class NativeWebBluetoothShim {
 
   async connectDevice(device: BluetoothDeviceShim): Promise<BluetoothRemoteGATTServerShim> {
     await this.ensureInitialized();
+    await this.ensureListeners();
     await this.plugin.connect({ deviceId: device.id });
     device.gatt.setConnected(true);
     device.setServices(null);
@@ -269,14 +270,23 @@ class NativeWebBluetoothShim {
   async getCharacteristics(
     device: BluetoothDeviceShim,
     serviceUuid: BluetoothServiceUUID,
+    characteristicUuid?: BluetoothCharacteristicUUID,
   ): Promise<BluetoothRemoteGATTCharacteristicShim[]> {
     const service = await this.findService(device, serviceUuid);
-
-    return service.characteristics.map((characteristicData) => {
+    const characteristics = service.characteristics.map((characteristicData) => {
       const characteristic = this.getOrCreateCharacteristic(device, service.uuid, characteristicData);
       characteristic.service = new BluetoothRemoteGATTServiceShim(this, device, service);
       return characteristic;
     });
+
+    if (typeof characteristicUuid === 'undefined') {
+      return characteristics;
+    }
+
+    const normalizedCharacteristicUuid = normalizeUuid(characteristicUuid);
+    return characteristics.filter(
+      (characteristic) => normalizeUuid(characteristic.uuid) === normalizedCharacteristicUuid,
+    );
   }
 
   async getCharacteristic(
@@ -369,6 +379,7 @@ class NativeWebBluetoothShim {
     serviceUuid: BluetoothServiceUUID,
     characteristicUuid: BluetoothCharacteristicUUID,
   ): Promise<void> {
+    await this.ensureListeners();
     await this.plugin.startCharacteristicNotifications({
       characteristic: normalizeUuid(characteristicUuid),
       deviceId: device.id,
@@ -665,8 +676,10 @@ class BluetoothRemoteGATTServiceShim {
     return this.serviceData.uuid;
   }
 
-  async getCharacteristics(): Promise<BluetoothRemoteGATTCharacteristicShim[]> {
-    return this.shim.getCharacteristics(this.device, this.uuid);
+  async getCharacteristics(
+    characteristicUuid?: BluetoothCharacteristicUUID,
+  ): Promise<BluetoothRemoteGATTCharacteristicShim[]> {
+    return this.shim.getCharacteristics(this.device, this.uuid, characteristicUuid);
   }
 
   async getCharacteristic(

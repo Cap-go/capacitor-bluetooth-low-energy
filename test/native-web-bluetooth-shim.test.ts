@@ -117,7 +117,8 @@ test('installs navigator.bluetooth in native Capacitor contexts', async () => {
   const knownDevices = await root.navigator.bluetooth?.getDevices();
   const server = await device?.gatt.connect();
   const service = await server?.getPrimaryService(0x180d);
-  const characteristic = await service?.getCharacteristic(0x2a37);
+  const characteristics = await service?.getCharacteristics(0x2a37);
+  const characteristic = characteristics?.[0];
   const descriptors = await characteristic?.getDescriptors(0x2902);
   const descriptor = await characteristic?.getDescriptor(0x2901);
 
@@ -127,6 +128,7 @@ test('installs navigator.bluetooth in native Capacitor contexts', async () => {
   expect(scanServices).toEqual([heartRateService]);
   expect(knownDevices?.map((entry) => entry.id)).toEqual(['device-1']);
   expect(service?.uuid).toBe(heartRateService);
+  expect(characteristics?.map((entry) => entry.uuid)).toEqual([heartRateMeasurement]);
   expect(descriptors?.map((entry) => entry.uuid)).toEqual([clientConfiguration]);
   expect(descriptor?.uuid).toBe(userDescription);
   expect(calls).toEqual([
@@ -156,4 +158,91 @@ test('does not install navigator.bluetooth on web', () => {
   });
 
   expect(root.navigator.bluetooth).toBeUndefined();
+});
+
+test('registers notification listeners for connected devices returned by getDevices', async () => {
+  const root = { navigator: {} } as unknown as typeof globalThis;
+  const listeners = new Map<string, (event: unknown) => void>();
+  const heartRateService = '0000180d-0000-1000-8000-00805f9b34fb';
+  const heartRateMeasurement = '00002a37-0000-1000-8000-00805f9b34fb';
+  const notificationValues: number[][] = [];
+
+  const plugin = {
+    addListener: async (eventName: string, listener: (event: unknown) => void) => {
+      listeners.set(eventName, listener);
+      return {
+        remove: async () => listeners.delete(eventName),
+      };
+    },
+    async initialize() {
+      return undefined;
+    },
+    async getConnectedDevices() {
+      return {
+        devices: [
+          {
+            deviceId: 'device-2',
+            name: 'Connected Sensor',
+            serviceUuids: [heartRateService],
+          },
+        ],
+      };
+    },
+    async discoverServices() {
+      return undefined;
+    },
+    async getServices() {
+      return {
+        services: [
+          {
+            uuid: heartRateService,
+            characteristics: [
+              {
+                uuid: heartRateMeasurement,
+                properties: {
+                  authenticatedSignedWrites: false,
+                  broadcast: false,
+                  extendedProperties: false,
+                  indicate: false,
+                  notify: true,
+                  read: true,
+                  write: false,
+                  writeWithoutResponse: false,
+                },
+                descriptors: [],
+              },
+            ],
+          },
+        ],
+      };
+    },
+    async startCharacteristicNotifications() {
+      return undefined;
+    },
+  } as unknown as BluetoothLowEnergyPlugin;
+
+  installBluetoothLowEnergyShim(plugin, {
+    isNativePlatform: true,
+    isPluginAvailable: true,
+    root,
+  });
+
+  const devices = await root.navigator.bluetooth?.getDevices();
+  const service = await devices?.[0]?.gatt.getPrimaryService(heartRateService);
+  const characteristic = await service?.getCharacteristic(heartRateMeasurement);
+
+  characteristic?.addEventListener('characteristicvaluechanged', (event) => {
+    notificationValues.push(Array.from(new Uint8Array(event.target.value?.buffer ?? new ArrayBuffer(0))));
+  });
+
+  await characteristic?.startNotifications();
+
+  listeners.get('characteristicChanged')?.({
+    characteristic: heartRateMeasurement,
+    deviceId: 'device-2',
+    service: heartRateService,
+    value: [1, 2, 3],
+  });
+
+  expect(notificationValues).toEqual([[1, 2, 3]]);
 });
