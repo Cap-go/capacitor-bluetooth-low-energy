@@ -19,10 +19,7 @@ let package = Package(
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm")
             ],
-            path: "ios/Sources/BluetoothLowEnergyPlugin",
-            resources: [
-                .process("Resources")
-            ]),
+            path: "ios/Sources/BluetoothLowEnergyPlugin"),
         .testTarget(
             name: "BluetoothLowEnergyPluginTests",
             dependencies: ["BluetoothLowEnergyPlugin"],

@@ -77,9 +77,9 @@ await BluetoothLowEnergy.requestPermissions();
 
 Works in Chrome and Chromium-based browsers using the Web Bluetooth API. Note that Web Bluetooth requires HTTPS and user interaction to scan for devices.
 
-## Native Web Bluetooth shim
+## Capacitor Web Bluetooth shim
 
-On iOS and Android, the plugin now injects a `navigator.bluetooth` shim at document start. That lets existing Web Bluetooth code use the native BLE implementation without importing `@capgo/capacitor-bluetooth-low-energy` in your app bundle.
+In Capacitor native contexts, the plugin JS entry can install a `navigator.bluetooth` shim so app code can keep using the Web Bluetooth API while the calls are forwarded to the native BLE implementation.
 
 ```typescript
 const device = await navigator.bluetooth.requestDevice({
@@ -90,7 +90,7 @@ const server = await device.gatt.connect();
 const service = await server.getPrimaryService('180d');
 ```
 
-The shim auto-initializes the plugin in central mode and forwards GATT reads, writes, descriptors, and notifications through the Capacitor bridge.
+The shim lives in the plugin JS bundle, auto-initializes the plugin in central mode, and forwards GATT reads, writes, descriptors, and notifications through the Capacitor bridge.
 
 Current native limitation: `requestDevice()` resolves the first matching scanned device instead of opening the browser chooser UI. If you need a custom picker or peripheral-mode flows, keep using the direct plugin API.
 
