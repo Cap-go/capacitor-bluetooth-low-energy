@@ -1,11 +1,13 @@
 import Foundation
 import Capacitor
 import CoreBluetooth
+import WebKit
 
 // swiftlint:disable type_body_length file_length
 @objc(BluetoothLowEnergyPlugin)
 public class BluetoothLowEnergyPlugin: CAPPlugin, CAPBridgedPlugin {
     private let pluginVersion: String = "8.0.1"
+    private var bluetoothShimInjected = false
     public let identifier = "BluetoothLowEnergyPlugin"
     public let jsName = "BluetoothLowEnergy"
     public let pluginMethods: [CAPPluginMethod] = [
@@ -47,6 +49,56 @@ public class BluetoothLowEnergyPlugin: CAPPlugin, CAPBridgedPlugin {
 
     override public func load() {
         implementation = BluetoothLowEnergy(plugin: self)
+        injectWebBluetoothShim()
+    }
+
+    private func injectWebBluetoothShim() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self,
+                  let webView = self.bridge?.webView,
+                  let script = self.loadWebBluetoothShimScript(),
+                  !self.bluetoothShimInjected else {
+                return
+            }
+
+            let userScript = WKUserScript(source: script, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+            webView.configuration.userContentController.addUserScript(userScript)
+            webView.evaluateJavaScript(script, completionHandler: nil)
+            self.bluetoothShimInjected = true
+        }
+    }
+
+    private func loadWebBluetoothShimScript() -> String? {
+        let resourceName = "web-bluetooth-shim"
+        let resourceExtension = "js"
+
+        #if SWIFT_PACKAGE
+        if let url = Bundle.module.url(forResource: resourceName, withExtension: resourceExtension),
+           let script = try? String(contentsOf: url, encoding: .utf8) {
+            return script
+        }
+        #endif
+
+        let candidateBundles = [
+            Bundle.main,
+            Bundle(for: BluetoothLowEnergyPlugin.self)
+        ]
+
+        for bundle in candidateBundles {
+            if let url = bundle.url(forResource: resourceName, withExtension: resourceExtension),
+               let script = try? String(contentsOf: url, encoding: .utf8) {
+                return script
+            }
+        }
+
+        if let resourcesBundleURL = Bundle(for: BluetoothLowEnergyPlugin.self).url(forResource: "CapgoCapacitorBluetoothLowEnergy", withExtension: "bundle"),
+           let resourcesBundle = Bundle(url: resourcesBundleURL),
+           let url = resourcesBundle.url(forResource: resourceName, withExtension: resourceExtension),
+           let script = try? String(contentsOf: url, encoding: .utf8) {
+            return script
+        }
+
+        return nil
     }
 
     @objc func initialize(_ call: CAPPluginCall) {

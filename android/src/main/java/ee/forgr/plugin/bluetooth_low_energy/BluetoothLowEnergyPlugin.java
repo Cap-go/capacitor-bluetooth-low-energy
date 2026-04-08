@@ -28,17 +28,27 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.provider.Settings;
+import android.webkit.WebView;
 import androidx.annotation.RequiresPermission;
 import androidx.core.app.ActivityCompat;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
+import com.getcapacitor.Logger;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +113,44 @@ public class BluetoothLowEnergyPlugin extends Plugin {
             bluetoothAdapter = bluetoothManager.getAdapter();
         }
         scanHandler = new Handler(Looper.getMainLooper());
+        injectWebBluetoothShim();
+    }
+
+    private void injectWebBluetoothShim() {
+        WebView webView = bridge != null ? bridge.getWebView() : null;
+        if (webView == null) {
+            return;
+        }
+
+        String script = loadWebBluetoothShimScript();
+        if (script == null || script.isEmpty()) {
+            Logger.warn("BluetoothLowEnergy", "Unable to load the Web Bluetooth shim asset.");
+            return;
+        }
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(webView, script, Collections.singleton("*"));
+        } else {
+            Logger.warn("BluetoothLowEnergy", "DOCUMENT_START_SCRIPT is not available; falling back to runtime injection.");
+        }
+
+        webView.post(() -> webView.evaluateJavascript(script, null));
+    }
+
+    private String loadWebBluetoothShimScript() {
+        try (InputStream inputStream = getContext().getAssets().open("web-bluetooth-shim.js");
+             InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+             BufferedReader bufferedReader = new BufferedReader(reader)) {
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                builder.append(line).append('\n');
+            }
+            return builder.toString();
+        } catch (IOException exception) {
+            Logger.error("BluetoothLowEnergy", "Failed to read the Web Bluetooth shim asset.", exception);
+            return null;
+        }
     }
 
     @PluginMethod
