@@ -79,9 +79,11 @@ Works in Chrome and Chromium-based browsers using the Web Bluetooth API. Note th
 
 ## Capacitor Web Bluetooth shim
 
-In Capacitor native contexts, the plugin JS entry can install a `navigator.bluetooth` shim so app code can keep using the Web Bluetooth API while the calls are forwarded to the native BLE implementation.
+In Capacitor native contexts, call `BluetoothLowEnergy.shimWebBluetooth()` before using `navigator.bluetooth`. That installs a JS shim so app code can keep using the Web Bluetooth API while the calls are forwarded to the native BLE implementation.
 
 ```typescript
+BluetoothLowEnergy.shimWebBluetooth();
+
 const device = await navigator.bluetooth.requestDevice({
   acceptAllDevices: true,
 });
@@ -99,6 +101,7 @@ Current native limitation: `requestDevice()` resolves the first matching scanned
 <docgen-index>
 
 * [`initialize(...)`](#initialize)
+* [`shimWebBluetooth()`](#shimwebbluetooth)
 * [`isAvailable()`](#isavailable)
 * [`isEnabled()`](#isenabled)
 * [`isLocationEnabled()`](#islocationenabled)
@@ -157,6 +160,20 @@ Must be called before any other method.
 | Param         | Type                                                            | Description              |
 | ------------- | --------------------------------------------------------------- | ------------------------ |
 | **`options`** | <code><a href="#initializeoptions">InitializeOptions</a></code> | - Initialization options |
+
+**Since:** 1.0.0
+
+--------------------
+
+
+### shimWebBluetooth()
+
+```typescript
+shimWebBluetooth() => void
+```
+
+Install the Capacitor Web Bluetooth shim on `navigator.bluetooth`.
+Call this manually before using the Web Bluetooth API from a Capacitor native app.
 
 **Since:** 1.0.0
 

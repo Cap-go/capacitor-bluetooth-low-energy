@@ -11,7 +11,6 @@ import type {
   DeviceDisconnectedEvent,
   DeviceScannedEvent,
 } from './definitions';
-import { BluetoothLowEnergy } from './plugin';
 
 const PLUGIN_NAME = 'BluetoothLowEnergy';
 const DEFAULT_SCAN_TIMEOUT = 15_000;
@@ -54,7 +53,6 @@ type ShimListener<TTarget> = (event: ShimEvent<TTarget>) => void;
 
 interface InstallBluetoothLowEnergyShimOptions {
   root?: typeof globalThis;
-  plugin?: BluetoothLowEnergyPlugin;
   isNativePlatform?: boolean;
   isPluginAvailable?: boolean;
 }
@@ -881,7 +879,10 @@ function normalizeError(error: unknown): Error {
   return new Error(String(error));
 }
 
-export function installBluetoothLowEnergyShim(options: InstallBluetoothLowEnergyShimOptions = {}): void {
+export function installBluetoothLowEnergyShim(
+  plugin: BluetoothLowEnergyPlugin,
+  options: InstallBluetoothLowEnergyShimOptions = {},
+): void {
   const root = (options.root ?? globalThis) as ShimRoot;
   const isNativePlatform = options.isNativePlatform ?? Capacitor.isNativePlatform();
   const isPluginAvailable = options.isPluginAvailable ?? Capacitor.isPluginAvailable(PLUGIN_NAME);
@@ -890,8 +891,6 @@ export function installBluetoothLowEnergyShim(options: InstallBluetoothLowEnergy
     return;
   }
 
-  const shim = new NativeWebBluetoothShim(root, options.plugin ?? BluetoothLowEnergy);
+  const shim = new NativeWebBluetoothShim(root, plugin);
   shim.install();
 }
-
-installBluetoothLowEnergyShim();

@@ -128,6 +128,10 @@ export class BluetoothLowEnergyWeb extends WebPlugin implements BluetoothLowEner
     }
   }
 
+  shimWebBluetooth(): void {
+    // The browser already provides navigator.bluetooth when available.
+  }
+
   async isAvailable(): Promise<IsAvailableResult> {
     if (!navigator.bluetooth) {
       return { available: false };

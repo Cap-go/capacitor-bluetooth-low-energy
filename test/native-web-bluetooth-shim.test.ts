@@ -51,10 +51,9 @@ test('installs navigator.bluetooth in native Capacitor contexts', async () => {
     },
   } as unknown as BluetoothLowEnergyPlugin;
 
-  installBluetoothLowEnergyShim({
+  installBluetoothLowEnergyShim(plugin, {
     isNativePlatform: true,
     isPluginAvailable: true,
-    plugin,
     root,
   });
 
@@ -83,10 +82,9 @@ test('installs navigator.bluetooth in native Capacitor contexts', async () => {
 test('does not install navigator.bluetooth on web', () => {
   const root = { navigator: {} } as unknown as typeof globalThis;
 
-  installBluetoothLowEnergyShim({
+  installBluetoothLowEnergyShim({} as BluetoothLowEnergyPlugin, {
     isNativePlatform: false,
     isPluginAvailable: true,
-    plugin: {} as BluetoothLowEnergyPlugin,
     root,
   });
 
