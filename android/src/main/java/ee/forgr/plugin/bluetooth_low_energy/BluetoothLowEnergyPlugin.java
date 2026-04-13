@@ -52,11 +52,16 @@ import java.util.UUID;
         @Permission(
             alias = "bluetooth",
             strings = {
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN,
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_CONNECT,
                 Manifest.permission.BLUETOOTH_ADVERTISE
+            }
+        ),
+        @Permission(
+            alias = "legacyBluetooth",
+            strings = {
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN
             }
         ),
         @Permission(
