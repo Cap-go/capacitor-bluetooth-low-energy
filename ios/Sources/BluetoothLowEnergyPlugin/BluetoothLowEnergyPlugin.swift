@@ -51,7 +51,8 @@ public class BluetoothLowEnergyPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func initialize(_ call: CAPPluginCall) {
         let mode = call.getString("mode") ?? "central"
-        implementation?.initialize(mode: mode) { error in
+        let showPowerAlert = call.getBool("showPowerAlert") ?? true
+        implementation?.initialize(mode: mode, showPowerAlert: showPowerAlert) { error in
             if let error = error {
                 call.reject(error.localizedDescription)
             } else {

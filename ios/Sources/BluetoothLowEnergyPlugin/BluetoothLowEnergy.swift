@@ -31,13 +31,19 @@ public class BluetoothLowEnergy: NSObject {
         super.init()
     }
 
-    func initialize(mode: String, completion: @escaping (Error?) -> Void) {
+    func initialize(mode: String, showPowerAlert: Bool, completion: @escaping (Error?) -> Void) {
         self.mode = mode
 
         if mode == "peripheral" {
-            peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
+            let options: [String: Any] = [
+                CBPeripheralManagerOptionShowPowerAlertKey: showPowerAlert
+            ]
+            peripheralManager = CBPeripheralManager(delegate: self, queue: nil, options: options)
         } else {
-            centralManager = CBCentralManager(delegate: self, queue: nil)
+            let options: [String: Any] = [
+                CBCentralManagerOptionShowPowerAlertKey: showPowerAlert
+            ]
+            centralManager = CBCentralManager(delegate: self, queue: nil, options: options)
         }
 
         // Wait for the manager to be ready

@@ -542,6 +542,14 @@ export interface InitializeOptions {
    * @since 1.0.0
    */
   mode?: 'central' | 'peripheral';
+
+  /**
+   * Whether iOS should show the system Bluetooth power alert when Bluetooth is off (iOS only).
+   *
+   * @default true
+   * @since 8.0.7
+   */
+  showPowerAlert?: boolean;
 }
 
 /**
