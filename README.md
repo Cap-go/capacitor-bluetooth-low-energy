@@ -782,9 +782,10 @@ Remove all listeners for this plugin.
 
 Initialization options for the plugin.
 
-| Prop       | Type                                   | Description                                                                                                                       | Default                | Since |
-| ---------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ----- |
-| **`mode`** | <code>'central' \| 'peripheral'</code> | The mode to initialize the plugin in. - 'central': Act as a BLE central (client) - 'peripheral': Act as a BLE peripheral (server) | <code>'central'</code> | 1.0.0 |
+| Prop                 | Type                                   | Description                                                                                                                       | Default                | Since |
+| -------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ----- |
+| **`mode`**           | <code>'central' \| 'peripheral'</code> | The mode to initialize the plugin in. - 'central': Act as a BLE central (client) - 'peripheral': Act as a BLE peripheral (server) | <code>'central'</code> | 1.0.0 |
+| **`showPowerAlert`** | <code>boolean</code>                   | Whether iOS should show the system Bluetooth power alert when Bluetooth is off (iOS only).                                        | <code>true</code>      | 8.0.7 |
 
 
 #### IsAvailableResult
