@@ -5,7 +5,7 @@ import CoreBluetooth
 // swiftlint:disable type_body_length file_length
 @objc(BluetoothLowEnergyPlugin)
 public class BluetoothLowEnergyPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let pluginVersion: String = "8.0.6"
+    private let pluginVersion: String = "8.1.0"
     public let identifier = "BluetoothLowEnergyPlugin"
     public let jsName = "BluetoothLowEnergy"
     public let pluginMethods: [CAPPluginMethod] = [
