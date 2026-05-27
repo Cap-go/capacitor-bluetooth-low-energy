@@ -1281,6 +1281,9 @@ export interface StartAdvertisingOptions {
   /**
    * The device name to advertise.
    *
+   * On Android, advertising the local name is implemented by temporarily setting the Bluetooth adapter name
+   * while advertising, then restoring the previous adapter name when advertising is stopped.
+   *
    * @since 1.0.0
    */
   name?: string;

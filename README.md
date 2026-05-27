@@ -1117,12 +1117,12 @@ Options for requesting connection priority.
 
 Options for starting advertising.
 
-| Prop                      | Type                  | Description                                              | Default            | Since |
-| ------------------------- | --------------------- | -------------------------------------------------------- | ------------------ | ----- |
-| **`name`**                | <code>string</code>   | The device name to advertise.                            |                    | 1.0.0 |
-| **`services`**            | <code>string[]</code> | Service UUIDs to advertise.                              |                    | 1.0.0 |
-| **`includeName`**         | <code>boolean</code>  | Whether to include the device name in the advertisement. | <code>true</code>  | 1.0.0 |
-| **`includeTxPowerLevel`** | <code>boolean</code>  | Whether to include TX power level in the advertisement.  | <code>false</code> | 1.0.0 |
+| Prop                      | Type                  | Description                                                                                                                                                                                                                    | Default            | Since |
+| ------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ | ----- |
+| **`name`**                | <code>string</code>   | The device name to advertise. On Android, advertising the local name is implemented by temporarily setting the Bluetooth adapter name while advertising, then restoring the previous adapter name when advertising is stopped. |                    | 1.0.0 |
+| **`services`**            | <code>string[]</code> | Service UUIDs to advertise.                                                                                                                                                                                                    |                    | 1.0.0 |
+| **`includeName`**         | <code>boolean</code>  | Whether to include the device name in the advertisement.                                                                                                                                                                       | <code>true</code>  | 1.0.0 |
+| **`includeTxPowerLevel`** | <code>boolean</code>  | Whether to include TX power level in the advertisement.                                                                                                                                                                        | <code>false</code> | 1.0.0 |
 
 
 #### StartForegroundServiceOptions

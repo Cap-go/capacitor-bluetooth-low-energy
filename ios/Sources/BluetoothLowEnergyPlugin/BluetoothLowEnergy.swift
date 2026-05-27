@@ -420,9 +420,10 @@ extension BluetoothLowEnergy: CBCentralManagerDelegate {
         let deviceId = peripheral.identifier.uuidString
         discoveredPeripherals[deviceId] = peripheral
 
+        let name = (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? peripheral.name
         var device: [String: Any] = [
             "deviceId": deviceId,
-            "name": peripheral.name as Any,
+            "name": name as Any,
             "rssi": RSSI.intValue
         ]
 
