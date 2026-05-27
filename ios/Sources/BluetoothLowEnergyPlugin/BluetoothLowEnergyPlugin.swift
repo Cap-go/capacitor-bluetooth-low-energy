@@ -390,7 +390,8 @@ public class BluetoothLowEnergyPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func startAdvertising(_ call: CAPPluginCall) {
-        let name = call.getString("name")
+        let includeName = call.getBool("includeName") ?? true
+        let name = includeName ? call.getString("name") : nil
         var serviceUUIDs: [CBUUID]?
         if let services = call.getArray("services", String.self) {
             serviceUUIDs = services.map { CBUUID(string: $0) }

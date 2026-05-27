@@ -91,6 +91,9 @@ public class BluetoothLowEnergyPlugin extends Plugin {
     private boolean isScanning = false;
     private String mode = "central";
 
+    private String originalBluetoothAdapterName;
+    private String advertisingBluetoothAdapterName;
+
     private PluginCall pendingConnectCall;
     private PluginCall pendingDiscoverCall;
     private PluginCall pendingReadCall;
@@ -309,10 +312,18 @@ public class BluetoothLowEnergyPlugin extends Plugin {
 
         JSObject deviceObj = new JSObject();
         deviceObj.put("deviceId", deviceId);
-        try {
-            deviceObj.put("name", device.getName());
-        } catch (SecurityException e) {
-            deviceObj.put("name", null);
+        String name = null;
+        if (result.getScanRecord() != null) {
+            name = result.getScanRecord().getDeviceName();
+        }
+        if (name != null) {
+            deviceObj.put("name", name);
+        } else {
+            try {
+                deviceObj.put("name", device.getName());
+            } catch (SecurityException e) {
+                deviceObj.put("name", null);
+            }
         }
         deviceObj.put("rssi", result.getRssi());
 
@@ -891,6 +902,11 @@ public class BluetoothLowEnergyPlugin extends Plugin {
         }
 
         String name = call.getString("name");
+        if (name != null && name.trim().isEmpty()) {
+            name = null;
+        }
+        boolean includeName = call.getBoolean("includeName", true);
+        boolean includeTxPowerLevel = call.getBoolean("includeTxPowerLevel", false);
         JSArray servicesArray = call.getArray("services");
 
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
@@ -900,8 +916,15 @@ public class BluetoothLowEnergyPlugin extends Plugin {
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
             .build();
 
+        if (includeName && name != null) {
+            if (!setBluetoothAdapterNameForAdvertising(name, call)) {
+                return;
+            }
+        }
+
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder()
-            .setIncludeDeviceName(name != null);
+            .setIncludeDeviceName(includeName)
+            .setIncludeTxPowerLevel(includeTxPowerLevel);
 
         if (servicesArray != null) {
             try {
@@ -923,6 +946,7 @@ public class BluetoothLowEnergyPlugin extends Plugin {
             @Override
             public void onStartFailure(int errorCode) {
                 // Advertising failed
+                restoreBluetoothAdapterNameIfNeeded();
             }
         };
 
@@ -930,6 +954,7 @@ public class BluetoothLowEnergyPlugin extends Plugin {
             bluetoothLeAdvertiser.startAdvertising(settings, dataBuilder.build(), advertiseCallback);
             call.resolve();
         } catch (SecurityException e) {
+            restoreBluetoothAdapterNameIfNeeded();
             call.reject("Permission denied: " + e.getMessage());
         }
     }
@@ -943,6 +968,7 @@ public class BluetoothLowEnergyPlugin extends Plugin {
                 // Ignore
             }
         }
+        restoreBluetoothAdapterNameIfNeeded();
         call.resolve();
     }
 
@@ -1113,6 +1139,53 @@ public class BluetoothLowEnergyPlugin extends Plugin {
                    ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
         } else {
             return ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        }
+    }
+
+    private boolean setBluetoothAdapterNameForAdvertising(String name, PluginCall call) {
+        if (bluetoothAdapter == null) {
+            call.reject("Bluetooth adapter not available");
+            return false;
+        }
+
+        try {
+            if (originalBluetoothAdapterName == null) {
+                originalBluetoothAdapterName = bluetoothAdapter.getName();
+            }
+            advertisingBluetoothAdapterName = name;
+
+            boolean updated = bluetoothAdapter.setName(name);
+            if (!updated) {
+                restoreBluetoothAdapterNameIfNeeded();
+                call.reject("Failed to set Bluetooth adapter name for advertising");
+                return false;
+            }
+
+            return true;
+        } catch (SecurityException e) {
+            restoreBluetoothAdapterNameIfNeeded();
+            call.reject("Permission denied: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private void restoreBluetoothAdapterNameIfNeeded() {
+        if (bluetoothAdapter == null || originalBluetoothAdapterName == null) {
+            advertisingBluetoothAdapterName = null;
+            originalBluetoothAdapterName = null;
+            return;
+        }
+
+        try {
+            String currentName = bluetoothAdapter.getName();
+            if (advertisingBluetoothAdapterName != null && advertisingBluetoothAdapterName.equals(currentName)) {
+                bluetoothAdapter.setName(originalBluetoothAdapterName);
+            }
+        } catch (SecurityException e) {
+            // Ignore
+        } finally {
+            advertisingBluetoothAdapterName = null;
+            originalBluetoothAdapterName = null;
         }
     }
 
