@@ -1,3 +1,5 @@
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { Capacitor } from '@capacitor/core';
 import './style.css';
 import { BluetoothLowEnergy } from '@capgo/capacitor-bluetooth-low-energy';
 
@@ -312,3 +314,9 @@ document.querySelector('#getServices').addEventListener('click', async () => {
     showError(error);
   }
 });
+
+if (Capacitor.isNativePlatform()) {
+  CapacitorUpdater.notifyAppReady().catch((error) => {
+    console.error('Capgo notifyAppReady failed', error);
+  });
+}
