@@ -10,12 +10,14 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
   },
   plugins: {
+    SplashScreen: {
+      launchAutoHide: false,
+    },
     CapacitorUpdater: {
       appId: 'ee.forgr.plugin.bluetoothlowenergy.example',
       autoUpdate: true,
       autoSplashscreen: true,
       directUpdate: 'always',
-      defaultChannel: 'production',
       version: pkg.version,
     },
   },
