@@ -427,6 +427,54 @@ export interface BluetoothLowEnergyPlugin {
   stopAdvertising(): Promise<void>;
 
   /**
+   * Add a GATT service with characteristics to the local GATT server.
+   * Must be called in peripheral mode before starting advertising.
+   *
+   * @param options - GATT service definition
+   * @returns Promise that resolves when the service is added
+   * @since 8.2.0
+   * @example
+   * ```typescript
+   * await BluetoothLowEnergy.addGattService({
+   *   service: '180D',
+   *   characteristics: [{
+   *     uuid: '2A37',
+   *     properties: { read: true, notify: true, write: false, writeWithoutResponse: false, broadcast: false, indicate: false, authenticatedSignedWrites: false, extendedProperties: false },
+   *     value: [0x00]
+   *   }]
+   * });
+   * ```
+   */
+  addGattService(options: AddGattServiceOptions): Promise<void>;
+
+  /**
+   * Remove a GATT service from the local GATT server.
+   *
+   * @param options - Service removal options
+   * @returns Promise that resolves when the service is removed
+   * @since 8.2.0
+   */
+  removeGattService(options: RemoveGattServiceOptions): Promise<void>;
+
+  /**
+   * Set the value of a local GATT characteristic.
+   *
+   * @param options - Characteristic value options
+   * @returns Promise that resolves when the value is set
+   * @since 8.2.0
+   */
+  setGattCharacteristicValue(options: SetGattCharacteristicValueOptions): Promise<void>;
+
+  /**
+   * Notify connected centrals that a local GATT characteristic value changed.
+   *
+   * @param options - Notification options
+   * @returns Promise that resolves when the notification is sent
+   * @since 8.2.0
+   */
+  notifyGattCharacteristicChanged(options: NotifyGattCharacteristicChangedOptions): Promise<void>;
+
+  /**
    * Start a foreground service to maintain BLE connections in background (Android only).
    *
    * @param options - Foreground service options
@@ -516,6 +564,58 @@ export interface BluetoothLowEnergyPlugin {
   addListener(
     eventName: 'characteristicChanged',
     listenerFunc: (event: CharacteristicChangedEvent) => void,
+  ): Promise<PluginListenerHandle>;
+
+  /**
+   * Add a listener for central connected events (peripheral mode).
+   *
+   * @param eventName - The event name
+   * @param listenerFunc - The listener function
+   * @returns Promise that resolves with a handle to remove the listener
+   * @since 8.2.0
+   */
+  addListener(
+    eventName: 'centralConnected',
+    listenerFunc: (event: CentralConnectedEvent) => void,
+  ): Promise<PluginListenerHandle>;
+
+  /**
+   * Add a listener for central disconnected events (peripheral mode).
+   *
+   * @param eventName - The event name
+   * @param listenerFunc - The listener function
+   * @returns Promise that resolves with a handle to remove the listener
+   * @since 8.2.0
+   */
+  addListener(
+    eventName: 'centralDisconnected',
+    listenerFunc: (event: CentralDisconnectedEvent) => void,
+  ): Promise<PluginListenerHandle>;
+
+  /**
+   * Add a listener for GATT characteristic read requests (peripheral mode).
+   *
+   * @param eventName - The event name
+   * @param listenerFunc - The listener function
+   * @returns Promise that resolves with a handle to remove the listener
+   * @since 8.2.0
+   */
+  addListener(
+    eventName: 'gattCharacteristicReadRequest',
+    listenerFunc: (event: GattCharacteristicReadRequestEvent) => void,
+  ): Promise<PluginListenerHandle>;
+
+  /**
+   * Add a listener for GATT characteristic write requests (peripheral mode).
+   *
+   * @param eventName - The event name
+   * @param listenerFunc - The listener function
+   * @returns Promise that resolves with a handle to remove the listener
+   * @since 8.2.0
+   */
+  addListener(
+    eventName: 'gattCharacteristicWriteRequest',
+    listenerFunc: (event: GattCharacteristicWriteRequestEvent) => void,
   ): Promise<PluginListenerHandle>;
 
   /**
@@ -1436,6 +1536,252 @@ export interface CharacteristicChangedEvent {
  *
  * @since 1.0.0
  */
+
+/**
+ * A GATT characteristic definition for the local GATT server.
+ *
+ * @since 8.2.0
+ */
+export interface GattCharacteristicDefinition {
+  /**
+   * The characteristic UUID.
+   *
+   * @since 8.2.0
+   */
+  uuid: string;
+
+  /**
+   * Properties of this characteristic.
+   *
+   * @since 8.2.0
+   */
+  properties: CharacteristicProperties;
+
+  /**
+   * Initial value as an array of bytes.
+   *
+   * @since 8.2.0
+   */
+  value?: number[];
+
+  /**
+   * Optional descriptors for this characteristic.
+   *
+   * @since 8.2.0
+   */
+  descriptors?: GattDescriptorDefinition[];
+}
+
+/**
+ * A GATT descriptor definition for the local GATT server.
+ *
+ * @since 8.2.0
+ */
+export interface GattDescriptorDefinition {
+  /**
+   * The descriptor UUID.
+   *
+   * @since 8.2.0
+   */
+  uuid: string;
+
+  /**
+   * Initial value as an array of bytes.
+   *
+   * @since 8.2.0
+   */
+  value?: number[];
+}
+
+/**
+ * Options for adding a GATT service.
+ *
+ * @since 8.2.0
+ */
+export interface AddGattServiceOptions {
+  /**
+   * The service UUID.
+   *
+   * @since 8.2.0
+   */
+  service: string;
+
+  /**
+   * Characteristics to expose in this service.
+   *
+   * @since 8.2.0
+   */
+  characteristics: GattCharacteristicDefinition[];
+}
+
+/**
+ * Options for removing a GATT service.
+ *
+ * @since 8.2.0
+ */
+export interface RemoveGattServiceOptions {
+  /**
+   * The service UUID.
+   *
+   * @since 8.2.0
+   */
+  service: string;
+}
+
+/**
+ * Options for setting a local GATT characteristic value.
+ *
+ * @since 8.2.0
+ */
+export interface SetGattCharacteristicValueOptions {
+  /**
+   * The service UUID.
+   *
+   * @since 8.2.0
+   */
+  service: string;
+
+  /**
+   * The characteristic UUID.
+   *
+   * @since 8.2.0
+   */
+  characteristic: string;
+
+  /**
+   * The value as an array of bytes.
+   *
+   * @since 8.2.0
+   */
+  value: number[];
+}
+
+/**
+ * Options for notifying connected centrals of a characteristic change.
+ *
+ * @since 8.2.0
+ */
+export interface NotifyGattCharacteristicChangedOptions {
+  /**
+   * The service UUID.
+   *
+   * @since 8.2.0
+   */
+  service: string;
+
+  /**
+   * The characteristic UUID.
+   *
+   * @since 8.2.0
+   */
+  characteristic: string;
+
+  /**
+   * The value as an array of bytes.
+   *
+   * @since 8.2.0
+   */
+  value: number[];
+
+  /**
+   * Optional central device ID. When omitted, all subscribed centrals are notified.
+   *
+   * @since 8.2.0
+   */
+  deviceId?: string;
+}
+
+/**
+ * Event emitted when a central connects to the local GATT server.
+ *
+ * @since 8.2.0
+ */
+export interface CentralConnectedEvent {
+  /**
+   * The central device ID.
+   *
+   * @since 8.2.0
+   */
+  deviceId: string;
+}
+
+/**
+ * Event emitted when a central disconnects from the local GATT server.
+ *
+ * @since 8.2.0
+ */
+export interface CentralDisconnectedEvent {
+  /**
+   * The central device ID.
+   *
+   * @since 8.2.0
+   */
+  deviceId: string;
+}
+
+/**
+ * Event emitted when a central reads a local GATT characteristic.
+ *
+ * @since 8.2.0
+ */
+export interface GattCharacteristicReadRequestEvent {
+  /**
+   * The central device ID.
+   *
+   * @since 8.2.0
+   */
+  deviceId: string;
+
+  /**
+   * The service UUID.
+   *
+   * @since 8.2.0
+   */
+  service: string;
+
+  /**
+   * The characteristic UUID.
+   *
+   * @since 8.2.0
+   */
+  characteristic: string;
+}
+
+/**
+ * Event emitted when a central writes to a local GATT characteristic.
+ *
+ * @since 8.2.0
+ */
+export interface GattCharacteristicWriteRequestEvent {
+  /**
+   * The central device ID.
+   *
+   * @since 8.2.0
+   */
+  deviceId: string;
+
+  /**
+   * The service UUID.
+   *
+   * @since 8.2.0
+   */
+  service: string;
+
+  /**
+   * The characteristic UUID.
+   *
+   * @since 8.2.0
+   */
+  characteristic: string;
+
+  /**
+   * The written value as an array of bytes.
+   *
+   * @since 8.2.0
+   */
+  value: number[];
+}
+
 export class BluetoothLowEnergyUtils {
   /**
    * Convert a byte array to a hex string.

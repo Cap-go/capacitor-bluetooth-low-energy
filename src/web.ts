@@ -31,6 +31,10 @@ import type {
   RequestMtuResult,
   RequestConnectionPriorityOptions,
   StartAdvertisingOptions,
+  AddGattServiceOptions,
+  RemoveGattServiceOptions,
+  SetGattCharacteristicValueOptions,
+  NotifyGattCharacteristicChangedOptions,
   StartForegroundServiceOptions,
   GetPluginVersionResult,
   BleDevice,
@@ -473,6 +477,22 @@ export class BluetoothLowEnergyWeb extends WebPlugin implements BluetoothLowEner
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async startAdvertising(_options: StartAdvertisingOptions): Promise<void> {
     throw new Error('startAdvertising is not supported on web');
+  }
+
+  async addGattService(_options: AddGattServiceOptions): Promise<void> {
+    throw new Error('addGattService is not supported on web');
+  }
+
+  async removeGattService(_options: RemoveGattServiceOptions): Promise<void> {
+    throw new Error('removeGattService is not supported on web');
+  }
+
+  async setGattCharacteristicValue(_options: SetGattCharacteristicValueOptions): Promise<void> {
+    throw new Error('setGattCharacteristicValue is not supported on web');
+  }
+
+  async notifyGattCharacteristicChanged(_options: NotifyGattCharacteristicChangedOptions): Promise<void> {
+    throw new Error('notifyGattCharacteristicChanged is not supported on web');
   }
 
   async stopAdvertising(): Promise<void> {

@@ -6,6 +6,9 @@ public class BluetoothLowEnergy: NSObject {
     fileprivate weak var plugin: BluetoothLowEnergyPlugin?
     private var centralManager: CBCentralManager?
     private var peripheralManager: CBPeripheralManager?
+    private var localGattServices: [CBUUID: CBMutableService] = [:]
+    private var localGattCharacteristics: [String: CBMutableCharacteristic] = [:]
+    private var connectedCentrals: [String: CBCentral] = [:]
 
     private var discoveredPeripherals: [String: CBPeripheral] = [:]
     private var connectedPeripherals: [String: CBPeripheral] = [:]
@@ -368,6 +371,157 @@ public class BluetoothLowEnergy: NSObject {
         peripheralManager?.stopAdvertising()
     }
 
+    func addGattService(serviceUUID: String, characteristics: [[String: Any]], completion: @escaping (Error?) -> Void) {
+        guard mode == "peripheral" else {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 1, userInfo: [NSLocalizedDescriptionKey: "GATT server is only available in peripheral mode"]))
+            return
+        }
+        guard let peripheralManager = peripheralManager else {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 2, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"]))
+            return
+        }
+        guard peripheralManager.state == .poweredOn else {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 3, userInfo: [NSLocalizedDescriptionKey: "Bluetooth is not powered on"]))
+            return
+        }
+
+        let serviceId = CBUUID(string: serviceUUID)
+        if localGattServices[serviceId] != nil {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 4, userInfo: [NSLocalizedDescriptionKey: "Service already exists"]))
+            return
+        }
+
+        var mutableCharacteristics: [CBMutableCharacteristic] = []
+        for characteristicDef in characteristics {
+            guard let characteristicUUID = characteristicDef["uuid"] as? String,
+                  let propertiesDict = characteristicDef["properties"] as? [String: Bool] else {
+                completion(NSError(domain: "BluetoothLowEnergy", code: 5, userInfo: [NSLocalizedDescriptionKey: "Invalid characteristic definition"]))
+                return
+            }
+
+            var properties: CBCharacteristicProperties = []
+            if propertiesDict["broadcast"] == true { properties.insert(.broadcast) }
+            if propertiesDict["read"] == true { properties.insert(.read) }
+            if propertiesDict["writeWithoutResponse"] == true { properties.insert(.writeWithoutResponse) }
+            if propertiesDict["write"] == true { properties.insert(.write) }
+            if propertiesDict["notify"] == true { properties.insert(.notify) }
+            if propertiesDict["indicate"] == true { properties.insert(.indicate) }
+            if propertiesDict["authenticatedSignedWrites"] == true { properties.insert(.authenticatedSignedWrites) }
+            if propertiesDict["extendedProperties"] == true { properties.insert(.extendedProperties) }
+
+            var permissions: CBAttributePermissions = []
+            if propertiesDict["read"] == true { permissions.insert(.readable) }
+            if propertiesDict["write"] == true || propertiesDict["writeWithoutResponse"] == true { permissions.insert(.writeable) }
+
+            let characteristic = CBMutableCharacteristic(type: CBUUID(string: characteristicUUID), properties: properties, value: nil, permissions: permissions)
+            if let value = characteristicDef["value"] as? [Int] {
+                characteristic.value = Data(value.map { UInt8(truncatingIfNeeded: $0) })
+            }
+
+            if properties.contains(.notify) || properties.contains(.indicate) {
+                let ccc = CBMutableDescriptor(type: CBUUID(string: "2902"), value: Data())
+                characteristic.descriptors = [ccc]
+            }
+
+            if let descriptors = characteristicDef["descriptors"] as? [[String: Any]] {
+                var mutableDescriptors = characteristic.descriptors ?? []
+                for descriptorDef in descriptors {
+                    guard let descriptorUUID = descriptorDef["uuid"] as? String else { continue }
+                    let descriptorValue: Data
+                    if let value = descriptorDef["value"] as? [Int] {
+                        descriptorValue = Data(value.map { UInt8(truncatingIfNeeded: $0) })
+                    } else {
+                        descriptorValue = Data()
+                    }
+                    mutableDescriptors.append(CBMutableDescriptor(type: CBUUID(string: descriptorUUID), value: descriptorValue))
+                }
+                characteristic.descriptors = mutableDescriptors
+            }
+
+            localGattCharacteristics[characteristicKey(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)] = characteristic
+            mutableCharacteristics.append(characteristic)
+        }
+
+        let service = CBMutableService(type: serviceId, primary: true)
+        service.characteristics = mutableCharacteristics
+        localGattServices[serviceId] = service
+        peripheralManager.add(service)
+        completion(nil)
+    }
+
+    func removeGattService(serviceUUID: String, completion: @escaping (Error?) -> Void) {
+        guard let peripheralManager = peripheralManager else {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"]))
+            return
+        }
+        let serviceId = CBUUID(string: serviceUUID)
+        guard let service = localGattServices.removeValue(forKey: serviceId) else {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 2, userInfo: [NSLocalizedDescriptionKey: "Service not found"]))
+            return
+        }
+        localGattCharacteristics = localGattCharacteristics.filter { !$0.key.hasPrefix(serviceUUID + "/") }
+        peripheralManager.remove(service)
+        completion(nil)
+    }
+
+    func setGattCharacteristicValue(serviceUUID: String, characteristicUUID: String, value: [Int], completion: @escaping (Error?) -> Void) {
+        guard let characteristic = localGattCharacteristics[characteristicKey(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)] else {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 1, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"]))
+            return
+        }
+        characteristic.value = Data(value.map { UInt8(truncatingIfNeeded: $0) })
+        completion(nil)
+    }
+
+    func notifyGattCharacteristicChanged(serviceUUID: String, characteristicUUID: String, value: [Int], deviceId: String?, completion: @escaping (Error?) -> Void) {
+        guard let peripheralManager = peripheralManager else {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 1, userInfo: [NSLocalizedDescriptionKey: "Peripheral manager not initialized"]))
+            return
+        }
+        guard let characteristic = localGattCharacteristics[characteristicKey(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)] else {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 2, userInfo: [NSLocalizedDescriptionKey: "Characteristic not found"]))
+            return
+        }
+        let data = Data(value.map { UInt8(truncatingIfNeeded: $0) })
+        characteristic.value = data
+        let centrals: [CBCentral]
+        if let deviceId = deviceId, let central = connectedCentrals[deviceId] {
+            centrals = [central]
+        } else {
+            centrals = Array(connectedCentrals.values)
+        }
+        let indicate = characteristic.properties.contains(.indicate)
+        let success = peripheralManager.updateValue(data, for: characteristic, onSubscribedCentrals: centrals.isEmpty ? nil : centrals)
+        if !success && !centrals.isEmpty {
+            completion(NSError(domain: "BluetoothLowEnergy", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to notify characteristic change"]))
+            return
+        }
+        _ = indicate
+        completion(nil)
+    }
+
+    private func trackCentralConnection(_ central: CBCentral) {
+        let deviceId = central.identifier.uuidString
+        if connectedCentrals[deviceId] == nil {
+            connectedCentrals[deviceId] = central
+            plugin?.emitCentralConnected(deviceId: deviceId)
+        }
+    }
+
+    private func characteristicKey(serviceUUID: String, characteristicUUID: String) -> String {
+        return "\(serviceUUID)/\(characteristicUUID)"
+    }
+
+    private func characteristicInfo(for characteristic: CBMutableCharacteristic) -> (service: String, characteristic: String)? {
+        for (key, value) in localGattCharacteristics where value === characteristic {
+            let parts = key.split(separator: "/", maxSplits: 1).map(String.init)
+            if parts.count == 2 {
+                return (parts[0], parts[1])
+            }
+        }
+        return nil
+    }
+
     // MARK: - Private Helpers
 
     private func findCharacteristic(peripheral: CBPeripheral, serviceUUID: String, characteristicUUID: String) -> CBCharacteristic? {
@@ -483,6 +637,66 @@ extension BluetoothLowEnergy: CBCentralManagerDelegate {
 extension BluetoothLowEnergy: CBPeripheralManagerDelegate {
     public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         // State updated
+    }
+
+    public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
+        let deviceId = central.identifier.uuidString
+        let wasConnected = connectedCentrals[deviceId] != nil
+        connectedCentrals[deviceId] = central
+        if !wasConnected {
+            plugin?.emitCentralConnected(deviceId: deviceId)
+        }
+    }
+
+    public func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
+        let deviceId = central.identifier.uuidString
+        connectedCentrals.removeValue(forKey: deviceId)
+        plugin?.emitCentralDisconnected(deviceId: deviceId)
+    }
+
+    public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+        guard let mutableCharacteristic = request.characteristic as? CBMutableCharacteristic else {
+            peripheral.respond(to: request, withResult: .attributeNotFound)
+            return
+        }
+
+        trackCentralConnection(request.central)
+        if let info = characteristicInfo(for: mutableCharacteristic) {
+            plugin?.emitGattCharacteristicReadRequest(
+                deviceId: request.central.identifier.uuidString,
+                service: info.service,
+                characteristic: info.characteristic
+            )
+        }
+
+        request.value = mutableCharacteristic.value
+        peripheral.respond(to: request, withResult: .success)
+    }
+
+    public func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        for request in requests {
+            guard let mutableCharacteristic = request.characteristic as? CBMutableCharacteristic else {
+                peripheral.respond(to: request, withResult: .attributeNotFound)
+                continue
+            }
+
+            trackCentralConnection(request.central)
+            if let value = request.value {
+                mutableCharacteristic.value = value
+                if let info = characteristicInfo(for: mutableCharacteristic) {
+                    plugin?.emitGattCharacteristicWriteRequest(
+                        deviceId: request.central.identifier.uuidString,
+                        service: info.service,
+                        characteristic: info.characteristic,
+                        value: value.map { Int($0) }
+                    )
+                }
+            }
+
+            if request.characteristic.properties.contains(.write) {
+                peripheral.respond(to: request, withResult: .success)
+            }
+        }
     }
 }
 

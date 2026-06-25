@@ -38,6 +38,10 @@ public class BluetoothLowEnergyPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "requestConnectionPriority", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startAdvertising", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopAdvertising", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "addGattService", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "removeGattService", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setGattCharacteristicValue", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "notifyGattCharacteristicChanged", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startForegroundService", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopForegroundService", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise)
@@ -411,6 +415,79 @@ public class BluetoothLowEnergyPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve()
     }
 
+    @objc func addGattService(_ call: CAPPluginCall) {
+        guard let serviceUUID = call.getString("service") else {
+            call.reject("Service UUID is required")
+            return
+        }
+        guard let characteristics = call.getArray("characteristics") as? [JSObject] else {
+            call.reject("Characteristics array is required")
+            return
+        }
+        let characteristicDefs = characteristics.map { obj -> [String: Any] in
+            var def: [String: Any] = [:]
+            def["uuid"] = obj["uuid"] as? String
+            def["properties"] = obj["properties"] as? [String: Bool]
+            def["value"] = obj["value"] as? [Int]
+            def["descriptors"] = obj["descriptors"] as? [[String: Any]]
+            return def
+        }
+        implementation?.addGattService(serviceUUID: serviceUUID, characteristics: characteristicDefs) { error in
+            if let error = error {
+                call.reject(error.localizedDescription)
+            } else {
+                call.resolve()
+            }
+        }
+    }
+
+    @objc func removeGattService(_ call: CAPPluginCall) {
+        guard let serviceUUID = call.getString("service") else {
+            call.reject("Service UUID is required")
+            return
+        }
+        implementation?.removeGattService(serviceUUID: serviceUUID) { error in
+            if let error = error {
+                call.reject(error.localizedDescription)
+            } else {
+                call.resolve()
+            }
+        }
+    }
+
+    @objc func setGattCharacteristicValue(_ call: CAPPluginCall) {
+        guard let serviceUUID = call.getString("service"),
+              let characteristicUUID = call.getString("characteristic"),
+              let value = call.getArray("value") as? [Int] else {
+            call.reject("Service, characteristic, and value are required")
+            return
+        }
+        implementation?.setGattCharacteristicValue(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID, value: value) { error in
+            if let error = error {
+                call.reject(error.localizedDescription)
+            } else {
+                call.resolve()
+            }
+        }
+    }
+
+    @objc func notifyGattCharacteristicChanged(_ call: CAPPluginCall) {
+        guard let serviceUUID = call.getString("service"),
+              let characteristicUUID = call.getString("characteristic"),
+              let value = call.getArray("value") as? [Int] else {
+            call.reject("Service, characteristic, and value are required")
+            return
+        }
+        let deviceId = call.getString("deviceId")
+        implementation?.notifyGattCharacteristicChanged(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID, value: value, deviceId: deviceId) { error in
+            if let error = error {
+                call.reject(error.localizedDescription)
+            } else {
+                call.resolve()
+            }
+        }
+    }
+
     @objc func startForegroundService(_ call: CAPPluginCall) {
         // iOS doesn't have foreground services like Android
         // Background execution is handled through Background Modes capability
@@ -437,6 +514,31 @@ public class BluetoothLowEnergyPlugin: CAPPlugin, CAPBridgedPlugin {
 
     func emitDeviceDisconnected(deviceId: String) {
         notifyListeners("deviceDisconnected", data: ["deviceId": deviceId])
+    }
+
+    func emitCentralConnected(deviceId: String) {
+        notifyListeners("centralConnected", data: ["deviceId": deviceId])
+    }
+
+    func emitCentralDisconnected(deviceId: String) {
+        notifyListeners("centralDisconnected", data: ["deviceId": deviceId])
+    }
+
+    func emitGattCharacteristicReadRequest(deviceId: String, service: String, characteristic: String) {
+        notifyListeners("gattCharacteristicReadRequest", data: [
+            "deviceId": deviceId,
+            "service": service,
+            "characteristic": characteristic
+        ])
+    }
+
+    func emitGattCharacteristicWriteRequest(deviceId: String, service: String, characteristic: String, value: [Int]) {
+        notifyListeners("gattCharacteristicWriteRequest", data: [
+            "deviceId": deviceId,
+            "service": service,
+            "characteristic": characteristic,
+            "value": value
+        ])
     }
 
     func emitCharacteristicChanged(deviceId: String, service: String, characteristic: String, value: [Int]) {
