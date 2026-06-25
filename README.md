@@ -145,6 +145,10 @@ Current native limitation: `requestDevice()` resolves the first matching scanned
 * [`requestConnectionPriority(...)`](#requestconnectionpriority)
 * [`startAdvertising(...)`](#startadvertising)
 * [`stopAdvertising()`](#stopadvertising)
+* [`addGattService(...)`](#addgattservice)
+* [`removeGattService(...)`](#removegattservice)
+* [`setGattCharacteristicValue(...)`](#setgattcharacteristicvalue)
+* [`notifyGattCharacteristicChanged(...)`](#notifygattcharacteristicchanged)
 * [`startForegroundService(...)`](#startforegroundservice)
 * [`stopForegroundService()`](#stopforegroundservice)
 * [`getPluginVersion()`](#getpluginversion)
@@ -152,6 +156,10 @@ Current native limitation: `requestDevice()` resolves the first matching scanned
 * [`addListener('deviceConnected', ...)`](#addlistenerdeviceconnected-)
 * [`addListener('deviceDisconnected', ...)`](#addlistenerdevicedisconnected-)
 * [`addListener('characteristicChanged', ...)`](#addlistenercharacteristicchanged-)
+* [`addListener('centralConnected', ...)`](#addlistenercentralconnected-)
+* [`addListener('centralDisconnected', ...)`](#addlistenercentraldisconnected-)
+* [`addListener('gattCharacteristicReadRequest', ...)`](#addlistenergattcharacteristicreadrequest-)
+* [`addListener('gattCharacteristicWriteRequest', ...)`](#addlistenergattcharacteristicwriterequest-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
@@ -651,6 +659,75 @@ Stop advertising.
 --------------------
 
 
+### addGattService(...)
+
+```typescript
+addGattService(options: AddGattServiceOptions) => Promise<void>
+```
+
+Add a GATT service with characteristics to the local GATT server.
+Must be called in peripheral mode before starting advertising.
+
+| Param         | Type                                                                    | Description               |
+| ------------- | ----------------------------------------------------------------------- | ------------------------- |
+| **`options`** | <code><a href="#addgattserviceoptions">AddGattServiceOptions</a></code> | - GATT service definition |
+
+**Since:** 8.2.0
+
+--------------------
+
+
+### removeGattService(...)
+
+```typescript
+removeGattService(options: RemoveGattServiceOptions) => Promise<void>
+```
+
+Remove a GATT service from the local GATT server.
+
+| Param         | Type                                                                          | Description               |
+| ------------- | ----------------------------------------------------------------------------- | ------------------------- |
+| **`options`** | <code><a href="#removegattserviceoptions">RemoveGattServiceOptions</a></code> | - Service removal options |
+
+**Since:** 8.2.0
+
+--------------------
+
+
+### setGattCharacteristicValue(...)
+
+```typescript
+setGattCharacteristicValue(options: SetGattCharacteristicValueOptions) => Promise<void>
+```
+
+Set the value of a local GATT characteristic.
+
+| Param         | Type                                                                                            | Description                    |
+| ------------- | ----------------------------------------------------------------------------------------------- | ------------------------------ |
+| **`options`** | <code><a href="#setgattcharacteristicvalueoptions">SetGattCharacteristicValueOptions</a></code> | - Characteristic value options |
+
+**Since:** 8.2.0
+
+--------------------
+
+
+### notifyGattCharacteristicChanged(...)
+
+```typescript
+notifyGattCharacteristicChanged(options: NotifyGattCharacteristicChangedOptions) => Promise<void>
+```
+
+Notify connected centrals that a local GATT characteristic value changed.
+
+| Param         | Type                                                                                                      | Description            |
+| ------------- | --------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **`options`** | <code><a href="#notifygattcharacteristicchangedoptions">NotifyGattCharacteristicChangedOptions</a></code> | - Notification options |
+
+**Since:** 8.2.0
+
+--------------------
+
+
 ### startForegroundService(...)
 
 ```typescript
@@ -772,6 +849,86 @@ Add a listener for characteristic changed events.
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
 
 **Since:** 1.0.0
+
+--------------------
+
+
+### addListener('centralConnected', ...)
+
+```typescript
+addListener(eventName: 'centralConnected', listenerFunc: (event: CentralConnectedEvent) => void) => Promise<PluginListenerHandle>
+```
+
+Add a listener for central connected events (peripheral mode).
+
+| Param              | Type                                                                                        | Description             |
+| ------------------ | ------------------------------------------------------------------------------------------- | ----------------------- |
+| **`eventName`**    | <code>'centralConnected'</code>                                                             | - The event name        |
+| **`listenerFunc`** | <code>(event: <a href="#centralconnectedevent">CentralConnectedEvent</a>) =&gt; void</code> | - The listener function |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
+
+**Since:** 8.2.0
+
+--------------------
+
+
+### addListener('centralDisconnected', ...)
+
+```typescript
+addListener(eventName: 'centralDisconnected', listenerFunc: (event: CentralDisconnectedEvent) => void) => Promise<PluginListenerHandle>
+```
+
+Add a listener for central disconnected events (peripheral mode).
+
+| Param              | Type                                                                                              | Description             |
+| ------------------ | ------------------------------------------------------------------------------------------------- | ----------------------- |
+| **`eventName`**    | <code>'centralDisconnected'</code>                                                                | - The event name        |
+| **`listenerFunc`** | <code>(event: <a href="#centraldisconnectedevent">CentralDisconnectedEvent</a>) =&gt; void</code> | - The listener function |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
+
+**Since:** 8.2.0
+
+--------------------
+
+
+### addListener('gattCharacteristicReadRequest', ...)
+
+```typescript
+addListener(eventName: 'gattCharacteristicReadRequest', listenerFunc: (event: GattCharacteristicReadRequestEvent) => void) => Promise<PluginListenerHandle>
+```
+
+Add a listener for GATT characteristic read requests (peripheral mode).
+
+| Param              | Type                                                                                                                  | Description             |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| **`eventName`**    | <code>'gattCharacteristicReadRequest'</code>                                                                          | - The event name        |
+| **`listenerFunc`** | <code>(event: <a href="#gattcharacteristicreadrequestevent">GattCharacteristicReadRequestEvent</a>) =&gt; void</code> | - The listener function |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
+
+**Since:** 8.2.0
+
+--------------------
+
+
+### addListener('gattCharacteristicWriteRequest', ...)
+
+```typescript
+addListener(eventName: 'gattCharacteristicWriteRequest', listenerFunc: (event: GattCharacteristicWriteRequestEvent) => void) => Promise<PluginListenerHandle>
+```
+
+Add a listener for GATT characteristic write requests (peripheral mode).
+
+| Param              | Type                                                                                                                    | Description             |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| **`eventName`**    | <code>'gattCharacteristicWriteRequest'</code>                                                                           | - The event name        |
+| **`listenerFunc`** | <code>(event: <a href="#gattcharacteristicwriterequestevent">GattCharacteristicWriteRequestEvent</a>) =&gt; void</code> | - The listener function |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
+
+**Since:** 8.2.0
 
 --------------------
 
@@ -1139,6 +1296,70 @@ Options for starting advertising.
 | **`includeTxPowerLevel`** | <code>boolean</code>  | Whether to include TX power level in the advertisement.                                                                                                                                                                        | <code>false</code> | 1.0.0 |
 
 
+#### AddGattServiceOptions
+
+Options for adding a GATT service.
+
+| Prop                  | Type                                        | Description                                | Since |
+| --------------------- | ------------------------------------------- | ------------------------------------------ | ----- |
+| **`service`**         | <code>string</code>                         | The service UUID.                          | 8.2.0 |
+| **`characteristics`** | <code>GattCharacteristicDefinition[]</code> | Characteristics to expose in this service. | 8.2.0 |
+
+
+#### GattCharacteristicDefinition
+
+A GATT characteristic definition for the local GATT server.
+
+| Prop              | Type                                                                          | Description                                   | Since |
+| ----------------- | ----------------------------------------------------------------------------- | --------------------------------------------- | ----- |
+| **`uuid`**        | <code>string</code>                                                           | The characteristic UUID.                      | 8.2.0 |
+| **`properties`**  | <code><a href="#characteristicproperties">CharacteristicProperties</a></code> | Properties of this characteristic.            | 8.2.0 |
+| **`value`**       | <code>number[]</code>                                                         | Initial value as an array of bytes.           | 8.2.0 |
+| **`descriptors`** | <code>GattDescriptorDefinition[]</code>                                       | Optional descriptors for this characteristic. | 8.2.0 |
+
+
+#### GattDescriptorDefinition
+
+A GATT descriptor definition for the local GATT server.
+
+| Prop        | Type                  | Description                         | Since |
+| ----------- | --------------------- | ----------------------------------- | ----- |
+| **`uuid`**  | <code>string</code>   | The descriptor UUID.                | 8.2.0 |
+| **`value`** | <code>number[]</code> | Initial value as an array of bytes. | 8.2.0 |
+
+
+#### RemoveGattServiceOptions
+
+Options for removing a GATT service.
+
+| Prop          | Type                | Description       | Since |
+| ------------- | ------------------- | ----------------- | ----- |
+| **`service`** | <code>string</code> | The service UUID. | 8.2.0 |
+
+
+#### SetGattCharacteristicValueOptions
+
+Options for setting a local GATT characteristic value.
+
+| Prop                 | Type                  | Description                     | Since |
+| -------------------- | --------------------- | ------------------------------- | ----- |
+| **`service`**        | <code>string</code>   | The service UUID.               | 8.2.0 |
+| **`characteristic`** | <code>string</code>   | The characteristic UUID.        | 8.2.0 |
+| **`value`**          | <code>number[]</code> | The value as an array of bytes. | 8.2.0 |
+
+
+#### NotifyGattCharacteristicChangedOptions
+
+Options for notifying connected centrals of a characteristic change.
+
+| Prop                 | Type                  | Description                                                                     | Since |
+| -------------------- | --------------------- | ------------------------------------------------------------------------------- | ----- |
+| **`service`**        | <code>string</code>   | The service UUID.                                                               | 8.2.0 |
+| **`characteristic`** | <code>string</code>   | The characteristic UUID.                                                        | 8.2.0 |
+| **`value`**          | <code>number[]</code> | The value as an array of bytes.                                                 | 8.2.0 |
+| **`deviceId`**       | <code>string</code>   | Optional central device ID. When omitted, all subscribed centrals are notified. | 8.2.0 |
+
+
 #### StartForegroundServiceOptions
 
 Options for starting the foreground service.
@@ -1203,6 +1424,47 @@ Event emitted when a characteristic value changes.
 | **`service`**        | <code>string</code>   | The service UUID.                   | 1.0.0 |
 | **`characteristic`** | <code>string</code>   | The characteristic UUID.            | 1.0.0 |
 | **`value`**          | <code>number[]</code> | The new value as an array of bytes. | 1.0.0 |
+
+
+#### CentralConnectedEvent
+
+Event emitted when a central connects to the local GATT server.
+
+| Prop           | Type                | Description            | Since |
+| -------------- | ------------------- | ---------------------- | ----- |
+| **`deviceId`** | <code>string</code> | The central device ID. | 8.2.0 |
+
+
+#### CentralDisconnectedEvent
+
+Event emitted when a central disconnects from the local GATT server.
+
+| Prop           | Type                | Description            | Since |
+| -------------- | ------------------- | ---------------------- | ----- |
+| **`deviceId`** | <code>string</code> | The central device ID. | 8.2.0 |
+
+
+#### GattCharacteristicReadRequestEvent
+
+Event emitted when a central reads a local GATT characteristic.
+
+| Prop                 | Type                | Description              | Since |
+| -------------------- | ------------------- | ------------------------ | ----- |
+| **`deviceId`**       | <code>string</code> | The central device ID.   | 8.2.0 |
+| **`service`**        | <code>string</code> | The service UUID.        | 8.2.0 |
+| **`characteristic`** | <code>string</code> | The characteristic UUID. | 8.2.0 |
+
+
+#### GattCharacteristicWriteRequestEvent
+
+Event emitted when a central writes to a local GATT characteristic.
+
+| Prop                 | Type                  | Description                             | Since |
+| -------------------- | --------------------- | --------------------------------------- | ----- |
+| **`deviceId`**       | <code>string</code>   | The central device ID.                  | 8.2.0 |
+| **`service`**        | <code>string</code>   | The service UUID.                       | 8.2.0 |
+| **`characteristic`** | <code>string</code>   | The characteristic UUID.                | 8.2.0 |
+| **`value`**          | <code>number[]</code> | The written value as an array of bytes. | 8.2.0 |
 
 
 ### Type Aliases
