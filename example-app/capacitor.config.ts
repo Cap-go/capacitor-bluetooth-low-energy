@@ -4,7 +4,7 @@ import pkg from './package.json';
 
 const config: CapacitorConfig = {
   appId: 'ee.forgr.plugin.bluetoothlowenergy.example',
-  appName: 'BLE Example',
+  appName: '@capgo/capacitor-bluetooth-low-energy',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
