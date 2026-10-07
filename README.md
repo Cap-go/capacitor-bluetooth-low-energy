@@ -1,12 +1,29 @@
 # @capgo/capacitor-bluetooth-low-energy
-<a href="https://capgo.app/"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-bluetooth-low-energy" alt="Capgo - Instant updates for Capacitor" /></a>
+
+Talk to Bluetooth Low Energy devices from your Capacitor app: scan, connect, read and write characteristics and subscribe to notifications on iOS, Android and the web. You can also advertise as a peripheral.
+
+<a href="https://capgo.app/?ref=plugin_bluetooth_low_energy"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-bluetooth-low-energy" alt="Capgo - Instant updates for Capacitor" /></a>
 
 <div align="center">
-  <h2><a href="https://capgo.app/?ref=plugin_bluetooth_low_energy"> ➡️ Get Instant updates for your App with Capgo</a></h2>
-  <h2><a href="https://capgo.app/consulting/?ref=plugin_bluetooth_low_energy"> Missing a feature? We'll build the plugin for you 💪</a></h2>
+  <p><b>Capgo</b>: open-source live updates for Ionic and Capacitor apps. Ship OTA fixes and features instantly, without waiting for app store review.</p>
+  <h2><a href="https://capgo.app/register/?ref=plugin_bluetooth_low_energy">➡️ Get started for free</a></h2>
+  <p>14-day unlimited free trial. No credit card required</p>
+  <p><a href="https://capgo.app/consulting/?ref=plugin_bluetooth_low_energy">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
 
-Bluetooth Low Energy (BLE) plugin for Capacitor with support for scanning, connecting, reading, writing, and notifications.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Cap-go/capacitor-bluetooth-low-energy/main/assets/github-social-preview.png" alt="@capgo/capacitor-bluetooth-low-energy for Capacitor apps" width="300" />
+</p>
+
+## Key features
+
+- **Scanning**: `startScan()` and `stopScan()` with a `deviceScanned` event.
+- **Connections**: `connect()`, `disconnect()`, `getConnectedDevices()` and `deviceConnected` or `deviceDisconnected` events.
+- **GATT access**: `discoverServices()`, `getServices()`, `readCharacteristic()` and `writeCharacteristic()`.
+- **Notifications**: `startCharacteristicNotifications()` with the `characteristicChanged` event.
+- **Peripheral mode**: `startAdvertising()` turns the device into a BLE server, with read and write request events.
+- **Setup helpers**: `isAvailable()`, `isEnabled()`, permissions, and Android bonding and settings shortcuts.
+- **Platforms**: iOS, Android and Web. iOS uses Core Bluetooth, Android uses the Bluetooth LE APIs, and web uses Web Bluetooth where the browser supports it.
 
 ## Why Capacitor Bluetooth Low Energy?
 
