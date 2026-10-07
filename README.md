@@ -1,6 +1,6 @@
 # @capgo/capacitor-bluetooth-low-energy
 
-Talk to Bluetooth Low Energy devices from your Capacitor app: scan, connect, read and write characteristics and subscribe to notifications on iOS, Android and the web. You can also advertise as a peripheral.
+Talk to Bluetooth Low Energy devices from your Capacitor app: scan, connect, read and write characteristics and subscribe to notifications on iOS, Android and the web. On iOS and Android you can also advertise as a peripheral.
 
 <a href="https://capgo.app/?ref=plugin_bluetooth_low_energy"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-bluetooth-low-energy" alt="Capgo - Instant updates for Capacitor" /></a>
 
@@ -21,7 +21,7 @@ Talk to Bluetooth Low Energy devices from your Capacitor app: scan, connect, rea
 - **Connections**: `connect()`, `disconnect()`, `getConnectedDevices()` and `deviceConnected` or `deviceDisconnected` events.
 - **GATT access**: `discoverServices()`, `getServices()`, `readCharacteristic()` and `writeCharacteristic()`.
 - **Notifications**: `startCharacteristicNotifications()` with the `characteristicChanged` event.
-- **Peripheral mode**: `startAdvertising()` turns the device into a BLE server, with read and write request events.
+- **Peripheral mode**: `startAdvertising()` turns the device into a BLE server, with read and write request events. Not available on web.
 - **Setup helpers**: `isAvailable()`, `isEnabled()`, permissions, and Android bonding and settings shortcuts.
 - **Platforms**: iOS, Android and Web. iOS uses Core Bluetooth, Android uses the Bluetooth LE APIs, and web uses Web Bluetooth where the browser supports it.
 
