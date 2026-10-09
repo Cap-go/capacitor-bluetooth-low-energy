@@ -77,7 +77,7 @@ import java.util.UUID;
 )
 public class BluetoothLowEnergyPlugin extends Plugin {
 
-    private final String pluginVersion = "8.2.4";
+    private final String pluginVersion = "8.2.5";
     private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothLeScanner bluetoothLeScanner;
