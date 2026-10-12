@@ -2,7 +2,7 @@
 
 Talk to Bluetooth Low Energy devices from your Capacitor app: scan, connect, read and write characteristics and subscribe to notifications on iOS, Android and the web. On iOS and Android you can also advertise as a peripheral.
 
-<a href="https://capgo.app/?ref=plugin_bluetooth_low_energy"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-bluetooth-low-energy" alt="Capgo - Instant updates for Capacitor" /></a>
+<a href="https://capgo.app/?ref=plugin_bluetooth_low_energy"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-bluetooth-low-energy" alt="Capgo - Build Capacitor apps with AI, ship updates instantly" /></a>
 
 <div align="center">
   <p><b>Capgo</b>: push fixes to your Capacitor users in minutes, build signed iOS and Android apps without a Mac, and roll back in one click.</p>
@@ -10,6 +10,8 @@ Talk to Bluetooth Low Energy devices from your Capacitor app: scan, connect, rea
   <p>14-day unlimited free trial. No credit card required</p>
   <p><a href="https://capgo.app/consulting/?ref=plugin_bluetooth_low_energy">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
+
+> 🤖 **Building with an AI coding agent?** Install [Capgo skills](https://capgo.app/skills/?ref=plugin_bluetooth_low_energy) so Claude Code, Codex, Cursor, Copilot, or Gemini CLI know how to install and use `@capgo/capacitor-bluetooth-low-energy` in your Capacitor app: `npx skills add Cap-go/capgo-skills`. Then ask your agent: *"Add @capgo/capacitor-bluetooth-low-energy to my Capacitor app and wire it up."* [Agent setup guides](https://capgo.app/agents/?ref=plugin_bluetooth_low_energy) · [Hosted MCP](https://capgo.app/docs/ai/mcp/?ref=plugin_bluetooth_low_energy)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Cap-go/capacitor-bluetooth-low-energy/main/assets/github-social-preview.png" alt="@capgo/capacitor-bluetooth-low-energy for Capacitor apps" width="300" />
